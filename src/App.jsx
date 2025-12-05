@@ -9,7 +9,7 @@ const SAMPLE_IMAGE_URL = 'https://placehold.co/1200x800/1e293b/a5f3fc?text=Sampl
 // Yardımcı Bileşen: Kaydırıcı Kontrolü
 const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange }) => (
     <div className="space-y-1">
-        <div className="flex justify-between text-xs text-slate-400">
+        <div className="flex justify-between text-xs text-slate-40            0">
             <span>{label}</span>
             <span className={`text-${primaryColor}-400 font-bold`}>{value}{unit}</span>
         </div>
@@ -72,8 +72,8 @@ const App = () => {
         saturate: 100,
         rotation: 0,
         scale: 1.0, // Scale 1.0'da sabit tutuldu
-        panX: 0, // Kaydırma (Pan) x değeri sıfırlandı
-        panY: 0, // Kaydırma (Pan) y değeri sıfırlandı
+        panX: 0, // Kaydırma (Pan) x değeri 
+        panY: 0, // Kaydırma (Pan) y değeri
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
@@ -194,7 +194,7 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        ctx.translate(panX, panY); 
+        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
         
         const drawWidth = originalImage.width;
         const drawHeight = originalImage.height;
@@ -752,7 +752,29 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* Zoom özelliği kaldırıldı */}
+                            {/* NEW: PanX (Yatay Kaydırma) */}
+                            <SliderControl 
+                                id="panX" 
+                                label="Offset X" 
+                                value={settings.panX} 
+                                min={-100} 
+                                max={100} 
+                                step={1} 
+                                unit="px" 
+                                onChange={handleSliderChange} 
+                            />
+                            
+                            {/* NEW: PanY (Dikey Kaydırma) */}
+                            <SliderControl 
+                                id="panY" 
+                                label="Offset Y" 
+                                value={settings.panY} 
+                                min={-100} 
+                                max={100} 
+                                step={1} 
+                                unit="px" 
+                                onChange={handleSliderChange} 
+                            />
                         </div>
                     </section>
 
