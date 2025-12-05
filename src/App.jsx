@@ -28,17 +28,14 @@ const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange 
 );
 
 // Yardımcı Bileşen: Filtre Butonu
-const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => {
-    const defaultClasses = `p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02]`;
-    return (
-        <button 
-            className={`${defaultClasses} ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
-            onClick={() => onClick(filter)}
-        >
-            {label}
-        </button>
-    );
-};
+const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => (
+    <button 
+        className={`p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02] ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
+        onClick={() => onClick(filter)}
+    >
+        {label}
+    </button>
+);
 
 // Gölge Sınıflarını Tailwind Shadow'a Eşleştirme
 const getShadowClass = (level) => {
@@ -78,7 +75,7 @@ const App = () => {
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
         shadowOffsetX: 0, // NEW
-        shadowOffsetY: 0, // NEW
+        shadowOffsetY: 15, // NEW
         borderRadius: 12, // px
         watermarkText: 'Pro Polish',
         watermarkColor: '#ffffff', // NEW
@@ -145,16 +142,23 @@ const App = () => {
 
     /**
      * Draws a rounded rectangle path on the canvas context.
+     * DÜZELTME: Canvas'ta tüm 4 köşenin de yuvarlak olmasını sağlamak için standart Canvas path lojiği uygulandı.
      */
     const roundRect = useCallback((ctx, x, y, width, height, radius) => {
         if (width < 2 * radius) radius = width / 2;
         if (height < 2 * radius) radius = height / 2;
+        
+        // Düzeltilmiş path lojiği
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
-        ctx.arcTo(x + width, y, x + width, y + height, radius);
-        ctx.arcTo(x + width, y + height, x, y + height, radius);
-        ctx.arcTo(x, y + height, x, y, radius);
-        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.lineTo(x + width - radius, y);
+        ctx.arcTo(x + width, y, x + width, y + radius, radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+        ctx.lineTo(x + radius, y + height);
+        ctx.arcTo(x, y + height, x, y + height - radius, radius);
+        ctx.lineTo(x, y + radius);
+        ctx.arcTo(x, y, x + radius, y, radius);
         ctx.closePath();
     }, []);
 
@@ -194,7 +198,7 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        ctx.translate(panX, panY); 
+        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
         
         const drawWidth = originalImage.width;
         const drawHeight = originalImage.height;
@@ -457,7 +461,7 @@ const App = () => {
         finalCtx.save();
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
-        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
+        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY, panX, panY } = settings;
         const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
         
         // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
@@ -475,25 +479,6 @@ const App = () => {
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
-        // --- BLUR KENAR DOLDURMA (Gerekli) ---
-        if (settings.blur > 0) {
-            finalCtx.save();
-            finalCtx.fillStyle = '#000000'; // Siyah ile doldurmak saydamlığı engeller
-            
-            // Maske alanını çiz
-            roundRect(
-                finalCtx, 
-                (-originalWidth / 2), 
-                (-originalHeight / 2), 
-                originalWidth, 
-                originalHeight, 
-                baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
-            );
-            finalCtx.fill(); // Maske alanını doldur
-            finalCtx.restore();
-        }
-
-
         // Apply Rounding Mask 
         finalCtx.save(); // Maske için yeni bir save durumu
         roundRect(
@@ -502,7 +487,7 @@ const App = () => {
             (-originalHeight / 2), 
             originalWidth, 
             originalHeight, 
-            baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
+            baseRadius 
         );
         finalCtx.clip(); // Maskeyi uygula
         
@@ -544,9 +529,13 @@ const App = () => {
         a.href = dataURL;
         a.download = 'edited_photo.png';
         document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.click(); // İndirme işlemini tetikle
         
+        // DÜZELTME: İndirme URL'sinin kaldırılması, tarayıcının indirmeyi başlatmasına izin verir.
+        setTimeout(() => {
+            document.body.removeChild(a);
+        }, 100); 
+
         setIsDownloading(false);
         showMessage('Download started.');
     };
@@ -554,42 +543,9 @@ const App = () => {
     // --- Pan/Zoom Event Handlers ---
     
     // Pan özelliğine ait tüm fonksiyonlar kaldırıldı
-    const handleMouseDown = (e) => {
-        // if (!isImageLoaded || e.button !== 0) return; 
-        // setIsDragging(true);
-        // dragStart.current = {
-        //     x: e.clientX,
-        //     y: e.clientY,
-        //     panX: settings.panX,
-        //     panY: settings.panY,
-        // };
-        // canvasRef.current.style.cursor = 'grabbing';
-    };
-
-    const handleMouseMove = (e) => {
-        // if (!isDragging || !isImageLoaded) return;
-        // const dx = e.clientX - dragStart.current.x;
-        // const dy = e.clientY - dragStart.current.y;
-        
-        // const newPanX = dragStart.current.panX + dx; 
-        // const newPanY = dragStart.current.panY + dy;
-        
-        // // Simple bounding logic: prevents panning too far out
-        // const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
-
-        // const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
-        // const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
-
-        // setSettings(prev => ({ ...prev, panX: boundedPanX, panY: boundedPanY }));
-    };
-
-    const handleMouseUp = () => {
-        // if (isDragging) {
-        //     setIsDragging(false);
-        //     if (canvasRef.current) canvasRef.current.style.cursor = 'default';
-        // }
-    };
-
+    const handleMouseDown = (e) => {};
+    const handleMouseMove = (e) => {};
+    const handleMouseUp = () => {};
     const handleWheel = (e) => {
         if (!isImageLoaded) return;
         e.preventDefault();
@@ -624,7 +580,7 @@ const App = () => {
                 <div className="p-4 border-b border-slate-800">
                     <div className="flex items-center gap-2">
                         <div className="bg-gradient-to-tr from-cyan-500 to-blue-500 p-2 rounded-lg text-white">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /></svg>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
                         </div>
                         <h1 className="font-bold text-lg text-white">Pro Image Editor</h1>
                     </div>
@@ -776,7 +732,7 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* Zoom özelliği kaldırıldı */}
+                            {/* PanX ve PanY kaydırıcıları kaldırıldı */}
                         </div>
                     </section>
 
@@ -799,6 +755,32 @@ const App = () => {
                             <FilterButton 
                                 label="Invert" filter="invert(100%)" currentFilter={currentFilter} onClick={applyFilter} 
                                 activeClass="bg-green-900/50 border-green-500 text-green-400 ring-2 ring-green-500/50"
+                            />
+                            
+                            {/* NEW FILTERS */}
+                             <FilterButton 
+                                label="Hue 90°" filter="hue-rotate(90deg)" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-violet-900/50 border-violet-500 text-violet-400 ring-2 ring-violet-500/50"
+                            />
+                            <FilterButton 
+                                label="Saturate 200%" filter="saturate(200%)" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-red-900/50 border-red-500 text-red-400 ring-2 ring-red-500/50"
+                            />
+                            <FilterButton 
+                                label="Contrast 150%" filter="contrast(150%)" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-blue-900/50 border-blue-500 text-blue-400 ring-2 ring-blue-500/50"
+                            />
+                            <FilterButton 
+                                label="Drop Shadow" filter="drop-shadow(0 0 10px rgba(0,0,0,0.5))" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-yellow-900/50 border-yellow-500 text-yellow-400 ring-2 ring-yellow-500/50"
+                            />
+                            <FilterButton 
+                                label="Vintage" filter="sepia(60%) contrast(120%)" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-orange-900/50 border-orange-500 text-orange-400 ring-2 ring-orange-500/50"
+                            />
+                            <FilterButton 
+                                label="Warm" filter="hue-rotate(-15deg) contrast(110%)" currentFilter={currentFilter} onClick={applyFilter} 
+                                activeClass="bg-pink-900/50 border-pink-500 text-pink-400 ring-2 ring-pink-500/50"
                             />
                         </div>
                     </section>
@@ -843,7 +825,7 @@ const App = () => {
                         {isDownloading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 12m4 4V4" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
                         )}
                         Download Image (PNG)
                     </button>
@@ -878,7 +860,11 @@ const App = () => {
                             ref={canvasRef} 
                             className="max-w-full max-h-full block w-full h-full object-contain relative z-0"
                             style={{ cursor: 'default' }}
-                            // Pan event handlers removed completely
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            onWheel={handleWheel}
                         />
                         {!isImageLoaded && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-500 p-4 z-10">
