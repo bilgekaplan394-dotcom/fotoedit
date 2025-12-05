@@ -431,15 +431,15 @@ const App = () => {
         // Uygulanan filtreleri içeren save bloğu
         finalCtx.save();
         
-        // DÜZELTME 1: BLUR filtresini 6 kat artırarak tarayıcı hafifletmesini dengele.
+        // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur } = settings;
-        const aggressiveBlur = blur * 6; // Blur çarpanı 6 yapıldı.
+        const aggressiveBlur = blur * 4; // Blur çarpanı 4 yapıldı.
         const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
         finalCtx.filter = aggressiveFilterStyle; 
 
-        // DÜZELTME 2: Border Radius'u 15 kat artırarak belirgin yapalım.
-        const baseRadius = settings.borderRadius * 15; // Köşe yuvarlama çarpanı 15 yapıldı.
+        // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
+        const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 yapıldı.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
