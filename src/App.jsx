@@ -145,16 +145,23 @@ const App = () => {
 
     /**
      * Draws a rounded rectangle path on the canvas context.
+     * DÜZELTME: Canvas'ta tüm 4 köşenin de yuvarlak olmasını sağlamak için standart Canvas path lojiği uygulandı.
      */
     const roundRect = useCallback((ctx, x, y, width, height, radius) => {
         if (width < 2 * radius) radius = width / 2;
         if (height < 2 * radius) radius = height / 2;
+        
+        // Düzeltilmiş path lojiği
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
-        ctx.arcTo(x + width, y, x + width, y + height, radius);
-        ctx.arcTo(x + width, y + height, x, y + height, radius);
-        ctx.arcTo(x, y + height, x, y, radius);
-        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.lineTo(x + width - radius, y);
+        ctx.arcTo(x + width, y, x + width, y + radius, radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+        ctx.lineTo(x + radius, y + height);
+        ctx.arcTo(x, y + height, x, y + height - radius, radius);
+        ctx.lineTo(x, y + radius);
+        ctx.arcTo(x, y, x + radius, y, radius);
         ctx.closePath();
     }, []);
 
@@ -476,7 +483,6 @@ const App = () => {
         finalCtx.rotate(radians);
         
         // --- BLUR KENAR DOLDURMA (Kaldırıldı) ---
-        // Manuel doldurma loğiği kaldırıldı.
 
         // Apply Rounding Mask 
         finalCtx.save(); // Maske için yeni bir save durumu
@@ -825,7 +831,7 @@ const App = () => {
                         {isDownloading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 12m4 4V4" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
                         )}
                         Download Image (PNG)
                     </button>
