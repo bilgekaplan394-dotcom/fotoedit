@@ -75,8 +75,13 @@ const App = () => {
         panY: 0,
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
+        shadowColor: '#000000', // NEW
+        shadowOffsetX: 0, // NEW
+        shadowOffsetY: 0, // NEW
         borderRadius: 12, // px
         watermarkText: 'Pro Polish',
+        watermarkColor: '#ffffff', // NEW
+        watermarkSize: 1.0, // NEW
         showWatermark: true,
         // Arka Plan Özellikleri
         padding: 40, // Fotoğraf ile çerçeve arası boşluk
@@ -305,10 +310,20 @@ const App = () => {
         else if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
              setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         } 
+        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { // NEW: Shadow Offset
+            setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
+        }
         else {
             setSettings(prev => ({ ...prev, [id]: parseFloat(value) }));
         }
     };
+    
+    /** Handle color input changes */
+    const handleColorChange = (e) => {
+        const { id, value } = e.target;
+        setSettings(prev => ({ ...prev, [id]: value }));
+    };
+
 
     /** Handle text input changes */
     const handleTextChange = (e) => {
@@ -351,8 +366,13 @@ const App = () => {
             panX: 0, 
             panY: 0,
             shadow: 3,
+            shadowColor: '#000000', // RESET
+            shadowOffsetX: 0, // RESET
+            shadowOffsetY: 0, // RESET
             borderRadius: 12,
             watermarkText: 'Pro Polish',
+            watermarkColor: '#ffffff', // RESET
+            watermarkSize: 1.0, // RESET
             showWatermark: true,
             padding: 40,
             background: 'linear-gradient(135deg, #1e3a8a 0%, #171717 100%)',
@@ -431,29 +451,19 @@ const App = () => {
 
         
         // --- DRAW IMAGE WITH TRANSFORMS ---
-        // Uygulanan filtreleri içeren save bloğu
         finalCtx.save();
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
-        const { brightness, contrast, saturate, blur } = settings;
-        const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
+        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
+        const aggressiveBlur = blur * 4; 
+        const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
-        // DÜZELTME 4: Filtre stilini doğru şekilde oluştur
-        let finalFilterString = '';
-        if (currentFilter !== 'none') {
-            // Basit filtreyi (invert, grayscale) ekle
-            finalFilterString += `${currentFilter} `; 
-        }
-        // Renk ve blur ayarlarını ekle
-        finalFilterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
-        
-        finalCtx.filter = finalFilterString; 
+        finalCtx.filter = aggressiveFilterStyle; 
 
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
-        const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 olarak korundu.
+        const baseRadius = settings.borderRadius * 4; 
 
-        // DÜZELTME 3: BLUR KENAR SAYDAMLIĞINI ENGELLEMEK İÇİN:
-        // MASKELENEN ALANI KOYU RENKLE DOLDURURUZ.
+        // DÜZELTME 3: GÖLGE AYARLARI BURADA GEÇERSİZDİR. Bu sadece CSS tarafından kontrol edilir.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
@@ -464,7 +474,6 @@ const App = () => {
         // --- BLUR KENAR DOLDURMA (Gerekli) ---
         if (settings.blur > 0) {
             finalCtx.save();
-            // Blur filtresi saydamlığı yaydığı için, görselin hemen arkasını doldurmalıyız.
             finalCtx.fillStyle = '#000000'; // Siyah ile doldurmak saydamlığı engeller
             
             // Maske alanını çiz
@@ -510,9 +519,9 @@ const App = () => {
             
             finalCtx.save(); // Filigran çizimi için yeni save
             
-            const fontScale = 1.0; 
-            finalCtx.font = `bold ${32 * fontScale}px sans-serif`; 
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 1.0)'; // TAMAMEN OPAK BEYAZ
+            const scaledFontSize = 32 * settings.watermarkSize; // NEW: Font boyutunu ölçeklendir
+            finalCtx.font = `bold ${scaledFontSize}px sans-serif`; 
+            finalCtx.fillStyle = settings.watermarkColor; // NEW: Filigran rengi
             finalCtx.textAlign = 'right';
             finalCtx.textBaseline = 'bottom';
             
