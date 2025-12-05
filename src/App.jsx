@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-// Core colors and styles
+// Temel renkler ve stil tanımları
 const primaryColor = 'cyan';
 const primaryHex = '#06b6d4'; // cyan-500
-// Sample image URL (Using a reliable placeholder)
+// Örnek görsel URL'si (Güvenilir placeholder ile değiştirildi)
 const SAMPLE_IMAGE_URL = 'https://placehold.co/1200x800/1e293b/a5f3fc?text=Sample+Image&font=arial'; 
 
-// Helper Component: Slider Control
+// Yardımcı Bileşen: Kaydırıcı Kontrolü
 const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange }) => (
     <div className="space-y-1">
         <div className="flex justify-between text-xs text-slate-400">
@@ -20,14 +20,14 @@ const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange 
             max={max} 
             value={value} 
             step={step} 
-            // Dark theme slider style
+            // Koyu temaya uygun kaydırıcı stili
             className={`w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-${primaryColor}-500`} 
             onInput={onChange}
         />
     </div>
 );
 
-// Helper Component: Filter Button
+// Yardımcı Bileşen: Filtre Butonu
 const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => {
     const defaultClasses = `p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02]`;
     return (
@@ -40,7 +40,7 @@ const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) =>
     );
 };
 
-// Map Shadow Level to Tailwind CSS Classes
+// Gölge Sınıflarını Tailwind Shadow'a Eşleştirme
 const getShadowClass = (level) => {
     const shadows = [
         'shadow-none',
@@ -48,16 +48,16 @@ const getShadowClass = (level) => {
         'shadow-md',
         'shadow-xl',
         'shadow-2xl',
-        'shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)]', // Extra prominent shadow
+        'shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)]', // Ekstra belirgin gölge
     ];
-    return shadows[level] || shadows[0]; 
+    return shadows[level] || shadows[0]; // 0-5 arası değerler için
 };
 
 
 const App = () => {
     const canvasRef = useRef(null);
-    const bgInputRef = useRef(null); 
-    const [originalImage, setOriginalImage] = useState(null); 
+    const bgInputRef = useRef(null); // Yeni: Arka plan görseli için
+    const [originalImage, setOriginalImage] = useState(null); // Başlangıçta null olacak, useEffect ile yüklenecek
     const [isImageLoaded, setIsImageLoaded] = useState(false);
     const [currentFilter, setCurrentFilter] = useState('none');
     const [message, setMessage] = useState('');
@@ -69,29 +69,28 @@ const App = () => {
         brightness: 100,
         contrast: 100,
         saturate: 100,
-        // Transforms
         rotation: 0,
-        tiltX: 0, // NEW: Tilt X
-        tiltY: 0, // NEW: Tilt Y
         scale: 1.0,
         panX: 0,
         panY: 0,
-        // Style
-        shadow: 3, 
-        borderRadius: 12, 
+        // Yeni Özellikler
+        shadow: 3, // 0'dan 5'e
+        borderRadius: 12, // px
         watermarkText: 'Pro Polish',
         showWatermark: true,
-        // Background
-        padding: 40, 
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #171717 100%)', 
-        bgType: 'gradient', 
-        customBackground: null, 
-        aspectRatio: 'auto',
+        // Arka Plan Özellikleri
+        padding: 40, // Fotoğraf ile çerçeve arası boşluk
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #171717 100%)', // Varsayılan koyu gradyan
+        bgType: 'gradient', // 'gradient', 'solid', 'image'
+        customBackground: null, // Yüklenen görselin dataURL'si
+        // Yeni Boyutlandırma Özelliği
+        aspectRatio: 'auto', // 'auto', '1 / 1', '16 / 9', '4 / 5'
         // Tuning
-        blur: 0, // NEW: Blur
+        blur: 0, 
     });
     
     const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+    // Arka plan görselini tutmak için ayrı bir state tanımlayalım
     const [bgImageObject, setBgImageObject] = useState(null);
 
     const aspectOptions = [
@@ -116,7 +115,7 @@ const App = () => {
         if (currentFilter !== 'none') {
             filterString += `${currentFilter} `;
         }
-        filterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur}px)`; // NEW: Blur added
+        filterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur}px)`; 
         
         return filterString.trim();
     }, [settings, currentFilter]);
@@ -300,7 +299,7 @@ const App = () => {
             const scaleMultiplier = parseFloat(value) / 100;
             setSettings(prev => ({ ...prev, [id]: scaleMultiplier }));
         } 
-        else if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'tiltX' || id === 'tiltY' || id === 'blur') {
+        else if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
              setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         } 
         else {
@@ -343,8 +342,8 @@ const App = () => {
             contrast: 100, 
             saturate: 100, 
             rotation: 0, 
-            tiltX: 0, // RESET
-            tiltY: 0, // RESET
+            tiltX: 0, 
+            tiltY: 0, 
             scale: 1.0, 
             panX: 0, 
             panY: 0,
@@ -357,7 +356,7 @@ const App = () => {
             bgType: 'gradient',
             customBackground: null,
             aspectRatio: 'auto',
-            blur: 0, // RESET
+            blur: 0, 
         });
         setCurrentFilter('none');
         setBgImageObject(null);
@@ -453,15 +452,14 @@ const App = () => {
         // Draw Image (no need to inverse scale coordinates, handled by clip and scale)
         finalCtx.drawImage(originalImage, -originalWidth / 2, -originalImage.naturalHeight / 2, originalWidth, originalHeight);
 
-        // 3D Tilt: Not possible on 2D Canvas for export, so skip this for the final file.
-
         // Draw Watermark
         if (settings.showWatermark && settings.watermarkText) {
             finalCtx.restore(); // Reset transforms for correct watermark placement
 
             const fontScale = 1.0; 
             finalCtx.font = `bold ${32 * fontScale}px sans-serif`; 
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.7)'; 
+            // DÜZELTME: Opaklık artırıldı (0.7 -> 0.9)
+            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
             finalCtx.textAlign = 'right';
             finalCtx.textBaseline = 'bottom';
             
@@ -718,7 +716,6 @@ const App = () => {
                                 unit="°" 
                                 onChange={handleSliderChange} 
                             />
-                            {/* NEW: Tilt controls are now part of settings, but 2D Canvas doesn't support them fully for export, so omitting them for simplicity in the UI unless explicitly requested by user */}
                             
                             <SliderControl 
                                 id="scale" 
