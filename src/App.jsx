@@ -602,7 +602,8 @@ const App = () => {
         <div className="h-screen w-full bg-slate-950 text-slate-200 font-sans flex flex-col md:flex-row overflow-hidden">
             
             {/* --- CONTROLS / LEFT PANEL --- */}
-            <div className="md:w-72 w-full bg-slate-900 border-r border-slate-800 flex flex-col z-30 shadow-2xl overflow-y-auto custom-scrollbar order-2 md:order-none">
+            {/* Mobil görünümde aşağıda kalmalı (order-2) */}
+            <div className="md:w-72 w-full bg-slate-900 border-r border-slate-800 flex flex-col z-30 shadow-2xl overflow-y-auto custom-scrollbar order-2 md:order-none max-h-[50vh] md:max-h-full">
                 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-800">
@@ -844,6 +845,7 @@ const App = () => {
             </div>
 
             {/* --- PHOTO PREVIEW / RIGHT AREA --- */}
+            {/* Mobil görünümde yukarıda kalmalı (order-1) ve esnek olmalı */}
             <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] order-1 md:order-none">
                 
                 {/* Preview Container (Relative) */}
