@@ -28,17 +28,14 @@ const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange 
 );
 
 // Yardımcı Bileşen: Filtre Butonu
-const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => {
-    const defaultClasses = `p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02]`;
-    return (
-        <button 
-            className={`${defaultClasses} ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
-            onClick={() => onClick(filter)}
-        >
-            {label}
-        </button>
-    );
-};
+const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => (
+    <button 
+        className={`p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02] ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
+        onClick={() => onClick(filter)}
+    >
+        {label}
+    </button>
+);
 
 // Gölge Sınıflarını Tailwind Shadow'a Eşleştirme
 const getShadowClass = (level) => {
@@ -201,8 +198,7 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        // Pan değerleri 0'da sabit
-        ctx.translate(panX, panY); 
+        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
         
         const drawWidth = originalImage.width;
         const drawHeight = originalImage.height;
@@ -743,27 +739,6 @@ const App = () => {
                             />
                             
                             {/* PanX ve PanY kaydırıcıları kaldırıldı */}
-                            {/* <SliderControl 
-                                id="panX" 
-                                label="Offset X" 
-                                value={settings.panX} 
-                                min={-100} 
-                                max={100} 
-                                step={1} 
-                                unit="px" 
-                                onChange={handleSliderChange} 
-                            />
-                            
-                            <SliderControl 
-                                id="panY" 
-                                label="Offset Y" 
-                                value={settings.panY} 
-                                min={-100} 
-                                max={100} 
-                                step={1} 
-                                unit="px" 
-                                onChange={handleSliderChange} 
-                            /> */}
                         </div>
                     </section>
 
