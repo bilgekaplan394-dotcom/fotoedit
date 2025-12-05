@@ -9,7 +9,7 @@ const SAMPLE_IMAGE_URL = 'https://placehold.co/1200x800/1e293b/a5f3fc?text=Sampl
 // Yardımcı Bileşen: Kaydırıcı Kontrolü
 const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange }) => (
     <div className="space-y-1">
-        <div className="flex justify-between text-xs text-slate-40            0">
+        <div className="flex justify-between text-xs text-slate-400">
             <span>{label}</span>
             <span className={`text-${primaryColor}-400 font-bold`}>{value}{unit}</span>
         </div>
@@ -475,24 +475,8 @@ const App = () => {
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
-        // --- BLUR KENAR DOLDURMA (Gerekli) ---
-        if (settings.blur > 0) {
-            finalCtx.save();
-            finalCtx.fillStyle = '#000000'; // Siyah ile doldurmak saydamlığı engeller
-            
-            // Maske alanını çiz
-            roundRect(
-                finalCtx, 
-                (-originalWidth / 2), 
-                (-originalHeight / 2), 
-                originalWidth, 
-                originalHeight, 
-                baseRadius 
-            );
-            finalCtx.fill(); // Maske alanını doldur
-            finalCtx.restore();
-        }
-
+        // --- BLUR KENAR DOLDURMA (Kaldırıldı) ---
+        // Manuel doldurma loğiği kaldırıldı.
 
         // Apply Rounding Mask 
         finalCtx.save(); // Maske için yeni bir save durumu
@@ -876,7 +860,11 @@ const App = () => {
                             ref={canvasRef} 
                             className="max-w-full max-h-full block w-full h-full object-contain relative z-0"
                             style={{ cursor: 'default' }}
-                            // Pan event handlers removed completely
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            onWheel={handleWheel}
                         />
                         {!isImageLoaded && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-500 p-4 z-10">
