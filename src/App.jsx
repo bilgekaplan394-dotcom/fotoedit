@@ -426,43 +426,44 @@ const App = () => {
         const contentCenterX = outputWidth / 2;
         const contentCenterY = outputHeight / 2;
 
-        finalCtx.filter = getCurrentFilterStyle();
         
         // --- DRAW IMAGE WITH TRANSFORMS ---
+        // Uygulanan filtreleri içeren save bloğu
+        finalCtx.save();
+        finalCtx.filter = getCurrentFilterStyle(); // Filtreleri buraya uygula
+
         const baseRadius = settings.borderRadius * 10;
         
-        finalCtx.save();
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
         // Apply scale (zoom)
         finalCtx.scale(settings.scale, settings.scale);
 
-        // Apply Rounding Mask (must be inverse-scaled)
+        // Apply Rounding Mask 
         roundRect(
             finalCtx, 
             (-originalWidth / 2), 
             (-originalHeight / 2), 
             originalWidth, 
             originalHeight, 
-            baseRadius / settings.scale // Inverse scale radius
+            baseRadius / settings.scale 
         );
         finalCtx.clip();
         
-        // Draw Image (no need to inverse scale coordinates, handled by clip and scale)
+        // Draw Image
         finalCtx.drawImage(originalImage, -originalWidth / 2, -originalImage.naturalHeight / 2, originalWidth, originalHeight);
 
-        // Draw Watermark
-        if (settings.showWatermark && settings.watermarkText) {
-            finalCtx.restore(); // Reset transforms for correct watermark placement
+        finalCtx.restore(); // Ana görsel çizimi bitti, filtreler kalktı.
 
-            // ÖNEMLİ DÜZELTME BAŞLANGICI: Filtrelerin filigranı etkilemesini engelle
-            finalCtx.filter = 'none'; 
+        // Draw Watermark (Filtresiz ve belirgin olmalı)
+        if (settings.showWatermark && settings.watermarkText) {
+            
+            finalCtx.save(); // Filigran çizimi için yeni save
             
             const fontScale = 1.0; 
             finalCtx.font = `bold ${32 * fontScale}px sans-serif`; 
-            // Opaklık 1.0'e çıkarıldı (en belirgin beyaz)
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 1.0)'; 
+            finalCtx.fillStyle = 'rgba(255, 255, 255, 1.0)'; // TAMAMEN OPAK BEYAZ
             finalCtx.textAlign = 'right';
             finalCtx.textBaseline = 'bottom';
             
@@ -471,11 +472,10 @@ const App = () => {
                 outputWidth - 40, 
                 outputHeight - 40 
             );
-            
-            // Filtre ayarını tekrar görselin çizimi bittiği için geri yüklemeye gerek yok, restore zaten tüm durumu resetliyor
+
+            finalCtx.restore(); // Filigran çizimi bitti
         }
 
-        finalCtx.restore();
 
         const dataURL = finalCanvas.toDataURL('image/png');
         const a = document.createElement('a');
@@ -584,7 +584,7 @@ const App = () => {
                     <button onClick={() => document.getElementById('imageUploader').click()} 
                             className={`w-full flex items-center justify-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg shadow-lg text-white bg-green-600 hover:bg-green-700 transition duration-150 transform hover:scale-[1.01]`} 
                     >
-                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /></svg>
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
                         Upload Photo
                     </button>
                     
