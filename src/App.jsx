@@ -223,7 +223,7 @@ const App = () => {
                         const containerDiv = canvasRef.current.parentNode;
                         canvasRef.current.width = containerDiv.clientWidth;
                         canvasRef.current.height = containerDiv.clientHeight;
-                        updateDisplay(); 
+                        updateDisplay(); // İlk çizimi tetikle
                     }
                 };
                 img.onerror = () => {
@@ -446,8 +446,7 @@ const App = () => {
         const blurSafetyMargin = settings.blur * 20; // 20x güvenlik payı (Blur 10px ise 200px ekstra alan)
         
         // ÇİZİM LOJİĞİ: BLUR'LU KENAR KIRPMASINI ÖNLEMEK İÇİN GÖRSELİ ÇİZMEDEN ÖNCE
-        // MASKELENEN ALANI SİYAH VEYA KOYU RENKLE DOLDURURUZ.
-        // Bu, blur nedeniyle oluşacak saydam kenarlığı dolduracaktır.
+        // MASKELENEN ALANI KOYU RENKLE DOLDURURUZ.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
@@ -455,11 +454,11 @@ const App = () => {
         // Apply scale (zoom)
         finalCtx.scale(settings.scale, settings.scale);
 
-        // 3a. Blur Kenar Doldurma (Gerekiyorsa)
+        // --- BLUR KENAR DOLDURMA (Gerekli) ---
         if (settings.blur > 0) {
             finalCtx.save();
-            // Maskenin dışına taşan alanı doldurmak için koyu rengi seçiyoruz
-            finalCtx.fillStyle = '#000000'; 
+            // Blur filtresi saydamlığı yaydığı için, görselin hemen arkasını doldurmalıyız.
+            finalCtx.fillStyle = '#000000'; // Siyah ile doldurmak saydamlığı engeller
             
             // Maske alanını çiz
             roundRect(
@@ -470,9 +469,10 @@ const App = () => {
                 originalHeight, 
                 baseRadius / settings.scale
             );
-            finalCtx.fill(); // Maske alanını siyahla doldur
+            finalCtx.fill(); // Maske alanını doldur
             finalCtx.restore();
         }
+
 
         // Apply Rounding Mask 
         finalCtx.save(); // Maske için yeni bir save durumu
@@ -606,7 +606,7 @@ const App = () => {
         <div className="h-screen w-full bg-slate-950 text-slate-200 font-sans flex flex-col md:flex-row overflow-hidden">
             
             {/* --- CONTROLS / LEFT PANEL --- */}
-            <div className="md:w-72 w-full bg-slate-900 border-r border-slate-800 flex flex-col z-30 shadow-2xl overflow-y-auto custom-scrollbar">
+            <div className="md:w-72 w-full bg-slate-900 border-r border-slate-800 flex flex-col z-30 shadow-2xl overflow-y-auto custom-scrollbar order-2 md:order-none">
                 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-800">
@@ -848,7 +848,7 @@ const App = () => {
             </div>
 
             {/* --- PHOTO PREVIEW / RIGHT AREA --- */}
-            <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px]">
+            <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] order-1 md:order-none">
                 
                 {/* Preview Container (Relative) */}
                 <div
