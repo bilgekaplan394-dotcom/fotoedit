@@ -444,6 +444,10 @@ const App = () => {
         // DÜZELTME 3: BLUR KENAR SAYDAMLIĞINI ENGELLEMEK İÇİN:
         // Maskeyi, görselin çizim boyutlarından biraz daha büyük çiziyoruz ki, blur maskenin içine yayılsın.
         const blurSafetyMargin = settings.blur * 20; // 20x güvenlik payı (Blur 10px ise 200px ekstra alan)
+        
+        // ÇİZİM LOJİĞİ: BLUR'LU KENAR KIRPMASINI ÖNLEMEK İÇİN GÖRSELİ ÇİZMEDEN ÖNCE
+        // MASKELENEN ALANI SİYAH VEYA KOYU RENKLE DOLDURURUZ.
+        // Bu, blur nedeniyle oluşacak saydam kenarlığı dolduracaktır.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
@@ -451,18 +455,38 @@ const App = () => {
         // Apply scale (zoom)
         finalCtx.scale(settings.scale, settings.scale);
 
+        // 3a. Blur Kenar Doldurma (Gerekiyorsa)
+        if (settings.blur > 0) {
+            finalCtx.save();
+            // Maskenin dışına taşan alanı doldurmak için koyu rengi seçiyoruz
+            finalCtx.fillStyle = '#000000'; 
+            
+            // Maske alanını çiz
+            roundRect(
+                finalCtx, 
+                (-originalWidth / 2), 
+                (-originalHeight / 2), 
+                originalWidth, 
+                originalHeight, 
+                baseRadius / settings.scale
+            );
+            finalCtx.fill(); // Maske alanını siyahla doldur
+            finalCtx.restore();
+        }
+
         // Apply Rounding Mask 
+        finalCtx.save(); // Maske için yeni bir save durumu
         roundRect(
             finalCtx, 
-            (-originalWidth / 2) - blurSafetyMargin, // Maskeyi sola taşı
-            (-originalHeight / 2) - blurSafetyMargin, // Maskeyi yukarı taşı
-            originalWidth + 2 * blurSafetyMargin, // Maskenin genişliğini artır
-            originalHeight + 2 * blurSafetyMargin, // Maskenin yüksekliğini artır
-            baseRadius / settings.scale + blurSafetyMargin // Radius'u da artır
+            (-originalWidth / 2), 
+            (-originalHeight / 2), 
+            originalWidth, 
+            originalHeight, 
+            baseRadius / settings.scale 
         );
-        finalCtx.clip();
+        finalCtx.clip(); // Maskeyi uygula
         
-        // Draw Image
+        // Draw Image (Görsel çizimi)
         finalCtx.drawImage(
             originalImage, 
             (-originalWidth / 2), 
@@ -471,7 +495,8 @@ const App = () => {
             originalHeight
         );
 
-        finalCtx.restore(); // Ana görsel çizimi bitti, filtreler kalktı.
+        finalCtx.restore(); // Maske save/restore edildi
+        finalCtx.restore(); // Ana transformasyon save/restore edildi
 
         // Draw Watermark (Filtresiz ve belirgin olmalı)
         if (settings.showWatermark && settings.watermarkText) {
