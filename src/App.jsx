@@ -112,9 +112,12 @@ const App = () => {
         const { brightness, contrast, saturate, blur } = settings;
         let filterString = '';
 
+        // DÜZELTME: Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
         if (currentFilter !== 'none') {
             filterString += `${currentFilter} `;
         }
+
+        // Renk ayarlamalarını ekle
         filterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur}px)`; 
         
         return filterString.trim();
@@ -434,9 +437,17 @@ const App = () => {
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur } = settings;
         const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
-        const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
-        finalCtx.filter = aggressiveFilterStyle; 
+        // DÜZELTME 4: Filtre stilini doğru şekilde oluştur
+        let finalFilterString = '';
+        if (currentFilter !== 'none') {
+            // Basit filtreyi (invert, grayscale) ekle
+            finalFilterString += `${currentFilter} `; 
+        }
+        // Renk ve blur ayarlarını ekle
+        finalFilterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
+        
+        finalCtx.filter = finalFilterString; 
 
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
         const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 olarak korundu.
