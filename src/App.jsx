@@ -451,14 +451,21 @@ const App = () => {
 
         
         // --- DRAW IMAGE WITH TRANSFORMS ---
+        // Uygulanan filtreleri içeren save bloğu
         finalCtx.save();
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
         const aggressiveBlur = blur * 4; 
-        const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
-        finalCtx.filter = aggressiveFilterStyle; 
+        // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
+        let finalFilterString = '';
+        if (currentFilter !== 'none') {
+            finalFilterString += `${currentFilter} `; 
+        }
+        finalFilterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
+        
+        finalCtx.filter = finalFilterString; 
 
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
         const baseRadius = settings.borderRadius * 4; 
