@@ -431,11 +431,14 @@ const App = () => {
         finalCtx.save();
         finalCtx.resetTransform();
 
+        // DÜZELTME: Kırmızı gradyan için rengi ayarla
+        let bgColor;
         if (settings.bgType === 'image' && bgImageObject) {
             finalCtx.drawImage(bgImageObject, 0, 0, outputWidth, outputHeight);
         } else {
-            let bgColor;
-            if (settings.background.includes('gradient')) {
+            if (settings.background.includes('#f05053')) { // Kırmızı gradyan tespiti
+                bgColor = '#f05053'; 
+            } else if (settings.background.includes('gradient')) {
                 bgColor = '#1e293b'; 
             } else {
                 bgColor = settings.background.match(/#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/)?.[0] || '#1e293b';
@@ -470,7 +473,7 @@ const App = () => {
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
         const baseRadius = settings.borderRadius * 4; 
 
-        // DÜZELTME 3: GÖLGE AYARLARI BURADA GEÇERSİZDİR. Bu sadece CSS tarafından kontrol edilir.
+        // DÜZELTME 3: GÖLGE AYARLARI BURADA GEÇERSİZ. Bu sadece CSS tarafından kontrol edilir.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
