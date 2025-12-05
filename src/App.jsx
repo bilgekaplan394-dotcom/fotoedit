@@ -70,7 +70,7 @@ const App = () => {
         contrast: 100,
         saturate: 100,
         rotation: 0,
-        scale: 1.0,
+        scale: 1.0, // Scale 1.0'da sabit tutuldu
         panX: 0,
         panY: 0,
         // Yeni Özellikler
@@ -303,14 +303,11 @@ const App = () => {
     const handleSliderChange = (e) => {
         const { id, value } = e.target;
         
-        if (id === 'scale') {
-            const scaleMultiplier = parseFloat(value) / 100;
-            setSettings(prev => ({ ...prev, [id]: scaleMultiplier }));
-        } 
-        else if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
+        // Kaldırılan Zoom özelliğine ait lojik kaldırıldı.
+        if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
              setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         } 
-        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { // NEW: Shadow Offset
+        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { 
             setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         }
         else {
@@ -404,8 +401,9 @@ const App = () => {
         // Calculate the bounding box of the rotated image content
         const cos = Math.abs(Math.cos(radians));
         const sin = Math.abs(Math.sin(radians));
-        const finalCanvasWidth = Math.ceil((originalWidth * settings.scale * cos) + (originalHeight * settings.scale * sin));
-        const finalCanvasHeight = Math.ceil((originalWidth * settings.scale * sin) + (originalHeight * settings.scale * cos));
+        // Scale 1.0'da sabitlendiği için, doğrudan orijinal genişliği kullanabiliriz.
+        const finalCanvasWidth = Math.ceil((originalWidth * cos) + (originalHeight * sin)); 
+        const finalCanvasHeight = Math.ceil((originalWidth * sin) + (originalHeight * cos));
         
         // --- CALCULATE OUTPUT FRAME SIZE ---
         const finalPadding = settings.padding * 2; 
@@ -459,7 +457,7 @@ const App = () => {
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
-        const aggressiveBlur = blur * 4; 
+        const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
         
         // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
         let finalFilterString = '';
@@ -473,13 +471,12 @@ const App = () => {
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
         const baseRadius = settings.borderRadius * 4; 
 
-        // DÜZELTME 3: GÖLGE AYARLARI BURADA GEÇERSİZ. Bu sadece CSS tarafından kontrol edilir.
-
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
-        // Apply scale (zoom)
-        finalCtx.scale(settings.scale, settings.scale);
+        // Apply scale (zoom) - Kaldırılan zoom özelliği artık 1.0 (sabit)
+        // finalCtx.scale(settings.scale, settings.scale); // Bu satır kaldırıldı
+        
 
         // --- BLUR KENAR DOLDURMA (Gerekli) ---
         if (settings.blur > 0) {
@@ -493,7 +490,7 @@ const App = () => {
                 (-originalHeight / 2), 
                 originalWidth, 
                 originalHeight, 
-                baseRadius / settings.scale
+                baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
             );
             finalCtx.fill(); // Maske alanını doldur
             finalCtx.restore();
@@ -508,7 +505,7 @@ const App = () => {
             (-originalHeight / 2), 
             originalWidth, 
             originalHeight, 
-            baseRadius / settings.scale 
+            baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
         );
         finalCtx.clip(); // Maskeyi uygula
         
@@ -576,11 +573,12 @@ const App = () => {
         const dx = e.clientX - dragStart.current.x;
         const dy = e.clientY - dragStart.current.y;
         
-        const newPanX = dragStart.current.panX + dx / settings.scale;
-        const newPanY = dragStart.current.panY + dy / settings.scale;
+        // Scale 1.0'da sabit olduğu için, pan lojiği basitleştirildi
+        const newPanX = dragStart.current.panX + dx; 
+        const newPanY = dragStart.current.panY + dy;
         
         // Simple bounding logic: prevents panning too far out
-        const maxPan = canvasRef.current.width * settings.scale / 2; // Approximate max pan limit
+        const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
 
         const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
         const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
@@ -598,17 +596,19 @@ const App = () => {
     const handleWheel = (e) => {
         if (!isImageLoaded) return;
         e.preventDefault();
+        // Zoom özelliği kaldırıldığı için, wheel event'i artık sadece kaydırma yapacaktır.
+        // Eğer kullanıcı zoom yapmaya çalışırsa (wheel), bunu görmezden geliyoruz.
+        /*
         const zoomSpeed = 0.1;
-        
         let newScale = settings.scale;
         if (e.deltaY < 0) {
             newScale += zoomSpeed;
         } else {
             newScale -= zoomSpeed;
         }
-        
         newScale = Math.max(0.1, Math.min(5.0, newScale));
         setSettings(prev => ({ ...prev, scale: newScale }));
+        */
     };
     
     // Responsive update effect
@@ -791,7 +791,8 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            <SliderControl 
+                            {/* Zoom özelliği kaldırıldığı için, bu kısım silindi. */}
+                            {/* <SliderControl 
                                 id="scale" 
                                 label="Zoom" 
                                 value={settings.scale * 100} 
@@ -800,7 +801,7 @@ const App = () => {
                                 step={10} 
                                 unit="%" 
                                 onChange={handleSliderChange} 
-                            />
+                            /> */}
                         </div>
                     </section>
 
