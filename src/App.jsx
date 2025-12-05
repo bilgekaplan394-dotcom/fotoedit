@@ -71,9 +71,9 @@ const App = () => {
         contrast: 100,
         saturate: 100,
         rotation: 0,
-        scale: 1.0, // Scale 1.0'da sabit tutuldu
-        panX: 0, // Kaydırma (Pan) x değeri 
-        panY: 0, // Kaydırma (Pan) y değeri
+        scale: 1.0, 
+        panX: 0, // Kaldırıldı
+        panY: 0, // Kaldırıldı
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
@@ -534,7 +534,6 @@ const App = () => {
         a.href = dataURL;
         a.download = 'edited_photo.png';
         document.body.appendChild(a);
-        a.click();
         document.body.removeChild(a);
         
         setIsDownloading(false);
