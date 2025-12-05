@@ -401,8 +401,7 @@ const App = () => {
         // Calculate the bounding box of the rotated image content
         const cos = Math.abs(Math.cos(radians));
         const sin = Math.abs(Math.sin(radians));
-        // Scale 1.0'da sabitlendiği için, doğrudan orijinal genişliği kullanabiliriz.
-        const finalCanvasWidth = Math.ceil((originalWidth * cos) + (originalHeight * sin)); 
+        const finalCanvasWidth = Math.ceil((originalWidth * cos) + (originalHeight * sin));
         const finalCanvasHeight = Math.ceil((originalWidth * sin) + (originalHeight * cos));
         
         // --- CALCULATE OUTPUT FRAME SIZE ---
@@ -790,18 +789,6 @@ const App = () => {
                                 unit="°" 
                                 onChange={handleSliderChange} 
                             />
-                            
-                            {/* Zoom özelliği kaldırıldığı için, bu kısım silindi. */}
-                            {/* <SliderControl 
-                                id="scale" 
-                                label="Zoom" 
-                                value={settings.scale * 100} 
-                                min={10} 
-                                max={500} 
-                                step={10} 
-                                unit="%" 
-                                onChange={handleSliderChange} 
-                            /> */}
                         </div>
                     </section>
 
