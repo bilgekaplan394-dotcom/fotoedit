@@ -1,17 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  // Bu ayar, Tailwind'e tüm .html ve .jsx dosyalarındaki sınıfları taramasını söyler
+  // Projedeki tüm .html, .jsx, .js vb. dosyalarını taramasını sağlıyoruz.
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // Özel renkleriniz ve stilleriniz
+      // Custom Colors (Koyu temayı ve cyan rengini desteklemek için)
       colors: {
         'cyan': {
-          50: '#ecfeff', 
-          // Diğer tonlar
+          400: '#22d3ee', // Özellikle kullanılan cyan tonu
+          500: '#06b6d4'
         },
         'slate': {
             950: '#020617'
