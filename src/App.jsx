@@ -72,8 +72,8 @@ const App = () => {
         saturate: 100,
         rotation: 0,
         scale: 1.0, 
-        panX: 0, // Kaldırıldı
-        panY: 0, // Kaldırıldı
+        panX: 0, // Pan ayarları 0'da sabit
+        panY: 0, // Pan ayarları 0'da sabit
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
@@ -119,7 +119,7 @@ const App = () => {
         const { brightness, contrast, saturate, blur } = settings;
         let filterString = '';
 
-        // DÜZELTME: Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
+        // Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
         if (currentFilter !== 'none') {
             filterString += `${currentFilter} `;
         }
@@ -201,7 +201,8 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
+        // Pan değerleri 0'da sabit
+        ctx.translate(panX, panY); 
         
         const drawWidth = originalImage.width;
         const drawHeight = originalImage.height;
@@ -316,7 +317,7 @@ const App = () => {
         if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
              setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         } 
-        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY' || id === 'panX' || id === 'panY') { // PanX/Y için NEW
+        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { 
             setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         }
         else {
@@ -464,7 +465,7 @@ const App = () => {
         finalCtx.save();
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
-        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
+        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY, panX, panY } = settings;
         const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
         
         // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
@@ -741,8 +742,8 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* NEW: PanX (Yatay Kaydırma) */}
-                            <SliderControl 
+                            {/* PanX ve PanY kaydırıcıları kaldırıldı */}
+                            {/* <SliderControl 
                                 id="panX" 
                                 label="Offset X" 
                                 value={settings.panX} 
@@ -753,7 +754,6 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* NEW: PanY (Dikey Kaydırma) */}
                             <SliderControl 
                                 id="panY" 
                                 label="Offset Y" 
@@ -763,7 +763,7 @@ const App = () => {
                                 step={1} 
                                 unit="px" 
                                 onChange={handleSliderChange} 
-                            />
+                            /> */}
                         </div>
                     </section>
 
