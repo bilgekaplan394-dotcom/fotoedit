@@ -1,19 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  // Projenizdeki tüm Tailwind sınıflarını içeren dosyaların yolları.
-  // Bu, Vite'ın App.jsx ve diğer tüm .jsx dosyalarınızdaki sınıfları bulmasını sağlar.
+  // Bu ayar, Tailwind'e tüm .html ve .jsx dosyalarındaki sınıfları taramasını söyler
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // Özel renklerinizi veya fontlarınızı buraya ekleyebilirsiniz (örn: cyan-900/30)
+      // Özel renkleriniz ve stilleriniz
       colors: {
         'cyan': {
           50: '#ecfeff', 
-          // Diğer tonlar (kullanılan cyan renklerini desteklemek için)
+          // Diğer tonlar
         },
+        'slate': {
+            950: '#020617'
+        }
       }
     },
   },
