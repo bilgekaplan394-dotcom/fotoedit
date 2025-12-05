@@ -431,15 +431,15 @@ const App = () => {
         // Uygulanan filtreleri içeren save bloğu
         finalCtx.save();
         
-        // DÜZELTME 1: BLUR filtresini 10 kat artırarak tarayıcı hafifletmesini dengele (Sadece indirme çıktısında)
+        // DÜZELTME 1: BLUR filtresini 6 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur } = settings;
-        const aggressiveBlur = blur * 10; // Blur değerini 10 kat artır.
+        const aggressiveBlur = blur * 6; // Blur çarpanı 6 yapıldı.
         const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
         finalCtx.filter = aggressiveFilterStyle; 
 
-        // DÜZELTME 2: Border Radius'u sadece ayarlandığı gibi kullan.
-        const baseRadius = settings.borderRadius; // Çarpanı kaldırdık
+        // DÜZELTME 2: Border Radius'u 15 kat artırarak belirgin yapalım.
+        const baseRadius = settings.borderRadius * 15; // Köşe yuvarlama çarpanı 15 yapıldı.
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
@@ -748,19 +748,19 @@ const App = () => {
                         <div className="grid grid-cols-2 gap-3">
                             <FilterButton 
                                 label="Original" filter="none" currentFilter={currentFilter} onClick={applyFilter} 
-                                activeClass={`bg-${primaryColor}-900/30 border-${primaryColor}-500 text-${primaryColor}-400 ring-2 ring-${primaryColor}-500/50`}
+                                activeClass={`bg-${primaryColor}-900/50 border-${primaryColor}-500 text-${primaryColor}-400 ring-2 ring-${primaryColor}-500/50`}
                             />
                             <FilterButton 
                                 label="Grayscale" filter="grayscale(100%)" currentFilter={currentFilter} onClick={applyFilter} 
-                                activeClass="bg-slate-500/30 border-slate-400 text-slate-200 ring-2 ring-slate-500/50"
+                                activeClass="bg-slate-500/50 border-slate-400 text-slate-200 ring-2 ring-slate-500/50"
                             />
                             <FilterButton 
                                 label="Sepia" filter="sepia(100%)" currentFilter={currentFilter} onClick={applyFilter} 
-                                activeClass="bg-amber-900/30 border-amber-500 text-amber-400 ring-2 ring-amber-500/50"
+                                activeClass="bg-amber-900/50 border-amber-500 text-amber-400 ring-2 ring-amber-500/50"
                             />
                             <FilterButton 
                                 label="Invert" filter="invert(100%)" currentFilter={currentFilter} onClick={applyFilter} 
-                                activeClass="bg-green-900/30 border-green-500 text-green-400 ring-2 ring-green-500/50"
+                                activeClass="bg-green-900/50 border-green-500 text-green-400 ring-2 ring-green-500/50"
                             />
                         </div>
                     </section>
@@ -805,7 +805,7 @@ const App = () => {
                         {isDownloading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 12m4 4V4" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
                         )}
                         Download Image (PNG)
                     </button>
