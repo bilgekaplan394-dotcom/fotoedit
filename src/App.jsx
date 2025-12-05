@@ -433,13 +433,17 @@ const App = () => {
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
         const { brightness, contrast, saturate, blur } = settings;
-        const aggressiveBlur = blur * 4; // Blur çarpanı 4 yapıldı.
+        const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
         const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
         
         finalCtx.filter = aggressiveFilterStyle; 
 
         // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
-        const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 yapıldı.
+        const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 olarak korundu.
+
+        // DÜZELTME 3: BLUR KENAR SAYDAMLIĞINI ENGELLEMEK İÇİN:
+        // Maskeyi, görselin çizim boyutlarından biraz daha büyük çiziyoruz ki, blur maskenin içine yayılsın.
+        const blurSafetyMargin = settings.blur * 20; // 20x güvenlik payı (Blur 10px ise 200px ekstra alan)
 
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
@@ -450,16 +454,22 @@ const App = () => {
         // Apply Rounding Mask 
         roundRect(
             finalCtx, 
-            (-originalWidth / 2), 
-            (-originalHeight / 2), 
-            originalWidth, 
-            originalHeight, 
-            baseRadius / settings.scale 
+            (-originalWidth / 2) - blurSafetyMargin, // Maskeyi sola taşı
+            (-originalHeight / 2) - blurSafetyMargin, // Maskeyi yukarı taşı
+            originalWidth + 2 * blurSafetyMargin, // Maskenin genişliğini artır
+            originalHeight + 2 * blurSafetyMargin, // Maskenin yüksekliğini artır
+            baseRadius / settings.scale + blurSafetyMargin // Radius'u da artır
         );
         finalCtx.clip();
         
         // Draw Image
-        finalCtx.drawImage(originalImage, -originalWidth / 2, -originalImage.naturalHeight / 2, originalWidth, originalHeight);
+        finalCtx.drawImage(
+            originalImage, 
+            (-originalWidth / 2), 
+            (-originalImage.naturalHeight / 2), 
+            originalWidth, 
+            originalHeight
+        );
 
         finalCtx.restore(); // Ana görsel çizimi bitti, filtreler kalktı.
 
@@ -805,7 +815,7 @@ const App = () => {
                         {isDownloading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 12m4 4V4" /></svg>
                         )}
                         Download Image (PNG)
                     </button>
