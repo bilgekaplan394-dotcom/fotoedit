@@ -28,14 +28,17 @@ const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange 
 );
 
 // Yardımcı Bileşen: Filtre Butonu
-const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => (
-    <button 
-        className={`p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02] ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
-        onClick={() => onClick(filter)}
-    >
-        {label}
-    </button>
-);
+const FilterButton = ({ label, filter, currentFilter, onClick, activeClass }) => {
+    const defaultClasses = `p-2 rounded-lg text-xs border transition-colors shadow-md transform hover:scale-[1.02]`;
+    return (
+        <button 
+            className={`${defaultClasses} ${currentFilter === filter ? activeClass : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`} 
+            onClick={() => onClick(filter)}
+        >
+            {label}
+        </button>
+    );
+};
 
 // Gölge Sınıflarını Tailwind Shadow'a Eşleştirme
 const getShadowClass = (level) => {
@@ -68,9 +71,9 @@ const App = () => {
         contrast: 100,
         saturate: 100,
         rotation: 0,
-        scale: 1.0, 
-        panX: 0, // Pan ayarları 0'da sabit
-        panY: 0, // Pan ayarları 0'da sabit
+        scale: 1.0, // Scale 1.0'da sabit tutuldu
+        panX: 0, // Kaydırma (Pan) x değeri sıfırlandı
+        panY: 0, // Kaydırma (Pan) y değeri sıfırlandı
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
@@ -116,7 +119,7 @@ const App = () => {
         const { brightness, contrast, saturate, blur } = settings;
         let filterString = '';
 
-        // Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
+        // DÜZELTME: Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
         if (currentFilter !== 'none') {
             filterString += `${currentFilter} `;
         }
@@ -142,23 +145,16 @@ const App = () => {
 
     /**
      * Draws a rounded rectangle path on the canvas context.
-     * DÜZELTME: Canvas'ta tüm 4 köşenin de yuvarlak olmasını sağlamak için standart Canvas path lojiği uygulandı.
      */
     const roundRect = useCallback((ctx, x, y, width, height, radius) => {
         if (width < 2 * radius) radius = width / 2;
         if (height < 2 * radius) radius = height / 2;
-        
-        // Düzeltilmiş path lojiği
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.arcTo(x + width, y, x + width, y + radius, radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
-        ctx.lineTo(x + radius, y + height);
-        ctx.arcTo(x, y + height, x, y + height - radius, radius);
-        ctx.lineTo(x, y + radius);
-        ctx.arcTo(x, y, x + radius, y, radius);
+        ctx.arcTo(x + width, y, x + width, y + height, radius);
+        ctx.arcTo(x + width, y + height, x, y + height, radius);
+        ctx.arcTo(x, y + height, x, y, radius);
+        ctx.arcTo(x, y, x + width, y, radius);
         ctx.closePath();
     }, []);
 
@@ -198,7 +194,7 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
+        ctx.translate(panX, panY); 
         
         const drawWidth = originalImage.width;
         const drawHeight = originalImage.height;
@@ -461,7 +457,7 @@ const App = () => {
         finalCtx.save();
         
         // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
-        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY, panX, panY } = settings;
+        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY } = settings;
         const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
         
         // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
@@ -479,7 +475,24 @@ const App = () => {
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
-        // --- BLUR KENAR DOLDURMA (Kaldırıldı) ---
+        // --- BLUR KENAR DOLDURMA (Gerekli) ---
+        if (settings.blur > 0) {
+            finalCtx.save();
+            finalCtx.fillStyle = '#000000'; // Siyah ile doldurmak saydamlığı engeller
+            
+            // Maske alanını çiz
+            roundRect(
+                finalCtx, 
+                (-originalWidth / 2), 
+                (-originalHeight / 2), 
+                originalWidth, 
+                originalHeight, 
+                baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
+            );
+            finalCtx.fill(); // Maske alanını doldur
+            finalCtx.restore();
+        }
+
 
         // Apply Rounding Mask 
         finalCtx.save(); // Maske için yeni bir save durumu
@@ -489,7 +502,7 @@ const App = () => {
             (-originalHeight / 2), 
             originalWidth, 
             originalHeight, 
-            baseRadius 
+            baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
         );
         finalCtx.clip(); // Maskeyi uygula
         
@@ -531,6 +544,7 @@ const App = () => {
         a.href = dataURL;
         a.download = 'edited_photo.png';
         document.body.appendChild(a);
+        a.click();
         document.body.removeChild(a);
         
         setIsDownloading(false);
@@ -541,15 +555,39 @@ const App = () => {
     
     // Pan özelliğine ait tüm fonksiyonlar kaldırıldı
     const handleMouseDown = (e) => {
-        // Pan özelliği kaldırıldığı için boş bırakıldı
+        // if (!isImageLoaded || e.button !== 0) return; 
+        // setIsDragging(true);
+        // dragStart.current = {
+        //     x: e.clientX,
+        //     y: e.clientY,
+        //     panX: settings.panX,
+        //     panY: settings.panY,
+        // };
+        // canvasRef.current.style.cursor = 'grabbing';
     };
 
     const handleMouseMove = (e) => {
-        // Pan özelliği kaldırıldığı için boş bırakıldı
+        // if (!isDragging || !isImageLoaded) return;
+        // const dx = e.clientX - dragStart.current.x;
+        // const dy = e.clientY - dragStart.current.y;
+        
+        // const newPanX = dragStart.current.panX + dx; 
+        // const newPanY = dragStart.current.panY + dy;
+        
+        // // Simple bounding logic: prevents panning too far out
+        // const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
+
+        // const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
+        // const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
+
+        // setSettings(prev => ({ ...prev, panX: boundedPanX, panY: boundedPanY }));
     };
 
     const handleMouseUp = () => {
-        // Pan özelliği kaldırıldığı için boş bırakıldı
+        // if (isDragging) {
+        //     setIsDragging(false);
+        //     if (canvasRef.current) canvasRef.current.style.cursor = 'default';
+        // }
     };
 
     const handleWheel = (e) => {
@@ -738,7 +776,7 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* PanX ve PanY kaydırıcıları kaldırıldı */}
+                            {/* Zoom özelliği kaldırıldı */}
                         </div>
                     </section>
 
@@ -805,7 +843,7 @@ const App = () => {
                         {isDownloading ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h.01M19 18H5a2 2 0 01-2-2V8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 12m4 4V4" /></svg>
                         )}
                         Download Image (PNG)
                     </button>
@@ -840,11 +878,7 @@ const App = () => {
                             ref={canvasRef} 
                             className="max-w-full max-h-full block w-full h-full object-contain relative z-0"
                             style={{ cursor: 'default' }}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                            onWheel={handleWheel}
+                            // Pan event handlers removed completely
                         />
                         {!isImageLoaded && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-500 p-4 z-10">
