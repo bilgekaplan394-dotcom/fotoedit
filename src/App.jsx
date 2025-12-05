@@ -271,7 +271,7 @@ const App = () => {
                 img.src = result;
             } else if (target === 'background') {
                 const bgImg = new Image();
-                bgImg.crossOrigin = "anonymous"; 
+                bgImg.crossOrigin = "anonymous"; // CORS'u etkinleştir
                 bgImg.onload = () => {
                     setBgImageObject(bgImg);
                     setSettings(prev => ({ 
@@ -459,7 +459,8 @@ const App = () => {
             const fontScale = 1.0; 
             finalCtx.font = `bold ${32 * fontScale}px sans-serif`; 
             // DÜZELTME: Opaklık artırıldı (0.7 -> 0.9)
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
+            // ÇOK ÖNEMLİ DÜZELTME: Opaklık 1.0'e çıkarıldı.
+            finalCtx.fillStyle = 'rgba(255, 255, 255, 1.0)'; 
             finalCtx.textAlign = 'right';
             finalCtx.textBaseline = 'bottom';
             
@@ -579,7 +580,7 @@ const App = () => {
                     <button onClick={() => document.getElementById('imageUploader').click()} 
                             className={`w-full flex items-center justify-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg shadow-lg text-white bg-green-600 hover:bg-green-700 transition duration-150 transform hover:scale-[1.01]`} 
                     >
-                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 18" /></svg>
                         Upload Photo
                     </button>
                     
