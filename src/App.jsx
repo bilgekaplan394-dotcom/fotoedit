@@ -442,10 +442,6 @@ const App = () => {
         const baseRadius = settings.borderRadius * 4; // Köşe yuvarlama çarpanı 4 olarak korundu.
 
         // DÜZELTME 3: BLUR KENAR SAYDAMLIĞINI ENGELLEMEK İÇİN:
-        // Maskeyi, görselin çizim boyutlarından biraz daha büyük çiziyoruz ki, blur maskenin içine yayılsın.
-        const blurSafetyMargin = settings.blur * 20; // 20x güvenlik payı (Blur 10px ise 200px ekstra alan)
-        
-        // ÇİZİM LOJİĞİ: BLUR'LU KENAR KIRPMASINI ÖNLEMEK İÇİN GÖRSELİ ÇİZMEDEN ÖNCE
         // MASKELENEN ALANI KOYU RENKLE DOLDURURUZ.
 
         finalCtx.translate(contentCenterX, contentCenterY);
