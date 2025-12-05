@@ -430,10 +430,17 @@ const App = () => {
         // --- DRAW IMAGE WITH TRANSFORMS ---
         // Uygulanan filtreleri içeren save bloğu
         finalCtx.save();
-        finalCtx.filter = getCurrentFilterStyle(); // Filtreleri buraya uygula
-
-        const baseRadius = settings.borderRadius * 10;
         
+        // DÜZELTME 1: BLUR filtresini 10 kat artırarak tarayıcı hafifletmesini dengele (Sadece indirme çıktısında)
+        const { brightness, contrast, saturate, blur } = settings;
+        const aggressiveBlur = blur * 10; // Blur değerini 10 kat artır.
+        const aggressiveFilterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
+        
+        finalCtx.filter = aggressiveFilterStyle; 
+
+        // DÜZELTME 2: Border Radius'u sadece ayarlandığı gibi kullan.
+        const baseRadius = settings.borderRadius; // Çarpanı kaldırdık
+
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
