@@ -456,10 +456,12 @@ const App = () => {
         if (settings.showWatermark && settings.watermarkText) {
             finalCtx.restore(); // Reset transforms for correct watermark placement
 
+            // ÖNEMLİ DÜZELTME BAŞLANGICI: Filtrelerin filigranı etkilemesini engelle
+            finalCtx.filter = 'none'; 
+            
             const fontScale = 1.0; 
             finalCtx.font = `bold ${32 * fontScale}px sans-serif`; 
-            // DÜZELTME: Opaklık artırıldı (0.7 -> 0.9)
-            // ÇOK ÖNEMLİ DÜZELTME: Opaklık 1.0'e çıkarıldı.
+            // Opaklık 1.0'e çıkarıldı (en belirgin beyaz)
             finalCtx.fillStyle = 'rgba(255, 255, 255, 1.0)'; 
             finalCtx.textAlign = 'right';
             finalCtx.textBaseline = 'bottom';
@@ -469,6 +471,8 @@ const App = () => {
                 outputWidth - 40, 
                 outputHeight - 40 
             );
+            
+            // Filtre ayarını tekrar görselin çizimi bittiği için geri yüklemeye gerek yok, restore zaten tüm durumu resetliyor
         }
 
         finalCtx.restore();
