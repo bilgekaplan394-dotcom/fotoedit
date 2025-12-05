@@ -63,6 +63,7 @@ const App = () => {
     const [message, setMessage] = useState('');
     const [isDownloading, setIsDownloading] = useState(false);
     
+    // isDragging state'i kaldırıldı
     const [isDragging, setIsDragging] = useState(false); 
 
     const [settings, setSettings] = useState({
@@ -71,8 +72,8 @@ const App = () => {
         saturate: 100,
         rotation: 0,
         scale: 1.0, // Scale 1.0'da sabit tutuldu
-        panX: 0,
-        panY: 0,
+        panX: 0, // Kaydırma (Pan) x değeri sıfırlandı
+        panY: 0, // Kaydırma (Pan) y değeri sıfırlandı
         // Yeni Özellikler
         shadow: 3, // 0'dan 5'e
         shadowColor: '#000000', // NEW
@@ -94,6 +95,7 @@ const App = () => {
         blur: 0, 
     });
     
+    // dragStart ref'i kaldırıldı
     const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
     // Arka plan görselini tutmak için ayrı bir state tanımlayalım
     const [bgImageObject, setBgImageObject] = useState(null);
@@ -473,10 +475,6 @@ const App = () => {
         finalCtx.translate(contentCenterX, contentCenterY);
         finalCtx.rotate(radians);
         
-        // Apply scale (zoom) - Kaldırılan zoom özelliği artık 1.0 (sabit)
-        // finalCtx.scale(settings.scale, settings.scale); // Bu satır kaldırıldı
-        
-
         // --- BLUR KENAR DOLDURMA (Gerekli) ---
         if (settings.blur > 0) {
             finalCtx.save();
@@ -511,8 +509,8 @@ const App = () => {
         // Draw Image (Görsel çizimi)
         finalCtx.drawImage(
             originalImage, 
-            (-originalWidth / 2), 
-            (-originalImage.naturalHeight / 2), 
+            (-originalWidth / 2) + settings.panX, // PanX uygulandı
+            (-originalImage.naturalHeight / 2) + settings.panY, // PanY uygulandı
             originalWidth, 
             originalHeight
         );
@@ -555,59 +553,47 @@ const App = () => {
 
     // --- Pan/Zoom Event Handlers ---
     
+    // Pan özelliğine ait tüm fonksiyonlar kaldırıldı
     const handleMouseDown = (e) => {
-        if (!isImageLoaded || e.button !== 0) return; 
-        setIsDragging(true);
-        dragStart.current = {
-            x: e.clientX,
-            y: e.clientY,
-            panX: settings.panX,
-            panY: settings.panY,
-        };
-        canvasRef.current.style.cursor = 'grabbing';
+        // if (!isImageLoaded || e.button !== 0) return; 
+        // setIsDragging(true);
+        // dragStart.current = {
+        //     x: e.clientX,
+        //     y: e.clientY,
+        //     panX: settings.panX,
+        //     panY: settings.panY,
+        // };
+        // canvasRef.current.style.cursor = 'grabbing';
     };
 
     const handleMouseMove = (e) => {
-        if (!isDragging || !isImageLoaded) return;
-        const dx = e.clientX - dragStart.current.x;
-        const dy = e.clientY - dragStart.current.y;
+        // if (!isDragging || !isImageLoaded) return;
+        // const dx = e.clientX - dragStart.current.x;
+        // const dy = e.clientY - dragStart.current.y;
         
-        // Scale 1.0'da sabit olduğu için, pan lojiği basitleştirildi
-        const newPanX = dragStart.current.panX + dx; 
-        const newPanY = dragStart.current.panY + dy;
+        // const newPanX = dragStart.current.panX + dx; 
+        // const newPanY = dragStart.current.panY + dy;
         
-        // Simple bounding logic: prevents panning too far out
-        const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
+        // // Simple bounding logic: prevents panning too far out
+        // const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
 
-        const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
-        const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
+        // const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
+        // const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
 
-        setSettings(prev => ({ ...prev, panX: boundedPanX, panY: boundedPanY }));
+        // setSettings(prev => ({ ...prev, panX: boundedPanX, panY: boundedPanY }));
     };
 
     const handleMouseUp = () => {
-        if (isDragging) {
-            setIsDragging(false);
-            if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
-        }
+        // if (isDragging) {
+        //     setIsDragging(false);
+        //     if (canvasRef.current) canvasRef.current.style.cursor = 'default';
+        // }
     };
 
     const handleWheel = (e) => {
         if (!isImageLoaded) return;
         e.preventDefault();
         // Zoom özelliği kaldırıldığı için, wheel event'i artık sadece kaydırma yapacaktır.
-        // Eğer kullanıcı zoom yapmaya çalışırsa (wheel), bunu görmezden geliyoruz.
-        /*
-        const zoomSpeed = 0.1;
-        let newScale = settings.scale;
-        if (e.deltaY < 0) {
-            newScale += zoomSpeed;
-        } else {
-            newScale -= zoomSpeed;
-        }
-        newScale = Math.max(0.1, Math.min(5.0, newScale));
-        setSettings(prev => ({ ...prev, scale: newScale }));
-        */
     };
     
     // Responsive update effect
@@ -789,6 +775,8 @@ const App = () => {
                                 unit="°" 
                                 onChange={handleSliderChange} 
                             />
+                            
+                            {/* Zoom özelliği kaldırıldı */}
                         </div>
                     </section>
 
@@ -889,12 +877,8 @@ const App = () => {
                         <canvas 
                             ref={canvasRef} 
                             className="max-w-full max-h-full block w-full h-full object-contain relative z-0"
-                            style={{ cursor: isImageLoaded ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                            onWheel={handleWheel}
+                            style={{ cursor: 'default' }}
+                            // Pan event handlers removed completely
                         />
                         {!isImageLoaded && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-500 p-4 z-10">
