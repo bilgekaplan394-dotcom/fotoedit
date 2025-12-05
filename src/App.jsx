@@ -309,7 +309,7 @@ const App = () => {
         if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
              setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         } 
-        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { 
+        else if (id === 'shadowOffsetX' || id === 'shadowOffsetY' || id === 'panX' || id === 'panY') { // PanX/Y için NEW
             setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
         }
         else {
@@ -487,7 +487,7 @@ const App = () => {
                 (-originalHeight / 2), 
                 originalWidth, 
                 originalHeight, 
-                baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
+                baseRadius 
             );
             finalCtx.fill(); // Maske alanını doldur
             finalCtx.restore();
@@ -502,7 +502,7 @@ const App = () => {
             (-originalHeight / 2), 
             originalWidth, 
             originalHeight, 
-            baseRadius // Ölçek çarpanı kaldırıldı (settings.scale 1.0)
+            baseRadius 
         );
         finalCtx.clip(); // Maskeyi uygula
         
@@ -555,39 +555,15 @@ const App = () => {
     
     // Pan özelliğine ait tüm fonksiyonlar kaldırıldı
     const handleMouseDown = (e) => {
-        // if (!isImageLoaded || e.button !== 0) return; 
-        // setIsDragging(true);
-        // dragStart.current = {
-        //     x: e.clientX,
-        //     y: e.clientY,
-        //     panX: settings.panX,
-        //     panY: settings.panY,
-        // };
-        // canvasRef.current.style.cursor = 'grabbing';
+        // Pan özelliği kaldırıldığı için boş bırakıldı
     };
 
     const handleMouseMove = (e) => {
-        // if (!isDragging || !isImageLoaded) return;
-        // const dx = e.clientX - dragStart.current.x;
-        // const dy = e.clientY - dragStart.current.y;
-        
-        // const newPanX = dragStart.current.panX + dx; 
-        // const newPanY = dragStart.current.panY + dy;
-        
-        // // Simple bounding logic: prevents panning too far out
-        // const maxPan = canvasRef.current.width / 2; // Approximate max pan limit
-
-        // const boundedPanX = Math.min(Math.max(newPanX, -maxPan), maxPan);
-        // const boundedPanY = Math.min(Math.max(newPanY, -maxPan), maxPan);
-
-        // setSettings(prev => ({ ...prev, panX: boundedPanX, panY: boundedPanY }));
+        // Pan özelliği kaldırıldığı için boş bırakıldı
     };
 
     const handleMouseUp = () => {
-        // if (isDragging) {
-        //     setIsDragging(false);
-        //     if (canvasRef.current) canvasRef.current.style.cursor = 'default';
-        // }
+        // Pan özelliği kaldırıldığı için boş bırakıldı
     };
 
     const handleWheel = (e) => {
