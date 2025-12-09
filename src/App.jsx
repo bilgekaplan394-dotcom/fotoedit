@@ -76,7 +76,7 @@ const App = () => {
         shadowOffsetX: 0, 
         shadowOffsetY: 15, 
         borderRadius: 12, 
-        watermarkText: 'Pro Polish',
+        watermarkText: 'SnapPolish',
         watermarkColor: '#ffffff', 
         watermarkSize: 1.0, 
         showWatermark: true,
