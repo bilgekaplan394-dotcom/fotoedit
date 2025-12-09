@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 // Temel renkler ve stil tanımları
 const primaryColor = 'cyan';
 const primaryHex = '#06b6d4'; // cyan-500
-// Örnek görsel URL'si (Güvenilir placeholder ile değiştirildi)
-const SAMPLE_IMAGE_URL = 'https://placehold.co/1200x800/1e293b/a5f3fc?text=Sample+Image&font=arial'; 
+// Örnek görsel URL'si tamamen kaldırıldı.
+const SAMPLE_IMAGE_URL = ''; 
 
 // Yardımcı Bileşen: Kaydırıcı Kontrolü
 const SliderControl = ({ id, label, value, min, max, step, unit = '%', onChange }) => (
@@ -54,13 +54,12 @@ const getShadowClass = (level) => {
 const App = () => {
     const canvasRef = useRef(null);
     const bgInputRef = useRef(null); // Yeni: Arka plan görseli için
-    const [originalImage, setOriginalImage] = useState(null); // Başlangıçta null olacak, useEffect ile yüklenecek
+    const [originalImage, setOriginalImage] = useState(null); 
     const [isImageLoaded, setIsImageLoaded] = useState(false);
     const [currentFilter, setCurrentFilter] = useState('none');
     const [message, setMessage] = useState('');
     const [isDownloading, setIsDownloading] = useState(false);
     
-    // isDragging state'i kaldırıldı
     const [isDragging, setIsDragging] = useState(false); 
 
     const [settings, setSettings] = useState({
@@ -68,33 +67,39 @@ const App = () => {
         contrast: 100,
         saturate: 100,
         rotation: 0,
-        scale: 1.0, // Scale 1.0'da sabit tutuldu
-        panX: 0, // Kaydırma (Pan) x değeri sıfırlandı
-        panY: 0, // Kaydırma (Pan) y değeri sıfırlandı
+        scale: 1.0, // Zoom geri geldi
+        panX: 0, 
+        panY: 0, 
         // Yeni Özellikler
-        shadow: 3, // 0'dan 5'e
-        shadowColor: '#000000', // NEW
-        shadowOffsetX: 0, // NEW
-        shadowOffsetY: 15, // NEW
-        borderRadius: 12, // px
+        shadow: 3, 
+        shadowColor: '#000000', 
+        shadowOffsetX: 0, 
+        shadowOffsetY: 15, 
+        borderRadius: 12, 
         watermarkText: 'Pro Polish',
-        watermarkColor: '#ffffff', // NEW
-        watermarkSize: 1.0, // NEW
+        watermarkColor: '#ffffff', 
+        watermarkSize: 1.0, 
         showWatermark: true,
         // Arka Plan Özellikleri
-        padding: 40, // Fotoğraf ile çerçeve arası boşluk
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #171717 100%)', // Varsayılan koyu gradyan
-        bgType: 'gradient', // 'gradient', 'solid', 'image'
-        customBackground: null, // Yüklenen görselin dataURL'si
+        padding: 40, 
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #171717 100%)', 
+        bgType: 'gradient', 
+        customBackground: null, 
         // Yeni Boyutlandırma Özelliği
-        aspectRatio: 'auto', // 'auto', '1 / 1', '16 / 9', '4 / 5'
+        aspectRatio: 'auto',
         // Tuning
         blur: 0, 
+        
+        // METİN VE KIRPMA İÇİN YENİ AYARLAR
+        crop: { x: 0, y: 0, width: 100, height: 100 }, // Yüzde olarak
+        textOverlay: { content: 'Your Caption Here', color: '#ffffff', size: 24, x: 50, y: 50, rotation: 0 },
+        showText: false,
+        
+        // YENİ: FIT MODE
+        fitMode: 'contain', // 'contain' (boşluk bırakır) veya 'cover' (doldurur)
     });
     
-    // dragStart ref'i kaldırıldı
     const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-    // Arka plan görselini tutmak için ayrı bir state tanımlayalım
     const [bgImageObject, setBgImageObject] = useState(null);
 
     const aspectOptions = [
@@ -116,12 +121,10 @@ const App = () => {
         const { brightness, contrast, saturate, blur } = settings;
         let filterString = '';
 
-        // DÜZELTME: Basit filtre (invert, grayscale, sepia) varsa önce onu ekle
         if (currentFilter !== 'none') {
             filterString += `${currentFilter} `;
         }
 
-        // Renk ayarlamalarını ekle
         filterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur}px)`; 
         
         return filterString.trim();
@@ -136,19 +139,18 @@ const App = () => {
                 backgroundPosition: 'center',
             };
         }
+        // NOTE: Burada arka plan rengini/gradyanını uyguluyoruz.
         return { background: settings.background };
     }, [settings.bgType, settings.customBackground, settings.background]);
 
 
     /**
      * Draws a rounded rectangle path on the canvas context.
-     * DÜZELTME: Canvas'ta tüm 4 köşenin de yuvarlak olmasını sağlamak için standart Canvas path lojiği uygulandı.
      */
     const roundRect = useCallback((ctx, x, y, width, height, radius) => {
         if (width < 2 * radius) radius = width / 2;
         if (height < 2 * radius) radius = height / 2;
         
-        // Düzeltilmiş path lojiği
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
         ctx.lineTo(x + width - radius, y);
@@ -163,13 +165,31 @@ const App = () => {
     }, []);
 
 
+    /** Canvas Gradyan Çizim Mantığı */
+    const drawGradient = useCallback((ctx, colorString, width, height) => {
+        const match = colorString.match(/linear-gradient\(([^,]+), ([^,]+) 0%, ([^)]+) 100%\)/);
+        if (match) {
+            const [, angleStr, color1, color2] = match;
+            const gradient = ctx.createLinearGradient(0, 0, width, height); 
+            gradient.addColorStop(0, color1.trim());
+            gradient.addColorStop(1, color2.trim());
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+        } else {
+            ctx.fillStyle = colorString.includes('#') ? colorString : '#1e293b'; 
+            ctx.fillRect(0, 0, width, height);
+        }
+    }, []);
+
+
     /** Canvas Drawing Logic */
     const updateDisplay = useCallback(() => {
         if (!isImageLoaded || !originalImage || !canvasRef.current) return;
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
-        const { rotation, scale, panX, panY, borderRadius } = settings;
+        const { rotation, scale, panX, panY, borderRadius, crop, fitMode } = settings; 
 
         canvas.style.filter = getCurrentFilterStyle();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -181,14 +201,18 @@ const App = () => {
         const cos = Math.abs(Math.cos(radians));
         const sin = Math.abs(Math.sin(radians));
         
-        // Rotated bounding box projection (Prevents cropping of the rotated image)
-        const projectionWidth = (originalImage.width * cos) + (originalImage.height * sin);
-        const projectionHeight = (originalImage.width * sin) + (originalImage.height * cos);
+        // Görüntü boyutlarını kırpma oranlarına göre hesapla
+        const croppedWidth = originalImage.width * (crop.width / 100);
+        const croppedHeight = originalImage.height * (crop.height / 100);
 
-        // Calculate fit scale to fit into the container
+        const projectionWidth = (croppedWidth * cos) + (croppedHeight * sin);
+        const projectionHeight = (croppedWidth * sin) + (croppedHeight * cos);
+
         let fitScaleX = containerWidth / projectionWidth;
         let fitScaleY = containerHeight / projectionHeight;
-        let fitScale = Math.min(fitScaleX, fitScaleY);
+        
+        // DÜZELTME: Fit moduna göre ölçekleme
+        let fitScale = fitMode === 'contain' ? Math.min(fitScaleX, fitScaleY) : Math.max(fitScaleX, fitScaleY);
 
         // --- DRAWING START ---
         
@@ -198,19 +222,26 @@ const App = () => {
         ctx.translate(containerWidth / 2, containerHeight / 2);
         ctx.rotate(radians);
         ctx.scale(fitScale * scale, fitScale * scale); 
-        ctx.translate(panX, panY); // Pan/Kaydırma uygulandı
+        ctx.translate(panX, panY); 
         
-        const drawWidth = originalImage.width;
-        const drawHeight = originalImage.height;
-
+        const drawWidth = croppedWidth;
+        const drawHeight = croppedHeight;
+        
         // 2. ROUNDED CORNER MASKING
-        
-        // Draw the rounded mask
         roundRect(ctx, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight, borderRadius / (fitScale * scale)); 
-        ctx.clip(); // Apply the mask
+        ctx.clip(); 
 
-        // 3. DRAW IMAGE
-        ctx.drawImage(originalImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        // 3. DRAW IMAGE (Kırpma önizlemesi için drawImage'in 9 parametreli versiyonu)
+        const sourceX = originalImage.width * (crop.x / 100);
+        const sourceY = originalImage.height * (crop.y / 100);
+        
+        ctx.drawImage(
+            originalImage, 
+            sourceX, sourceY, // Source X, Y
+            drawWidth, drawHeight, // Source Width, Height
+            -drawWidth / 2, -drawHeight / 2, // Destination X, Y (Merkezlenmiş)
+            drawWidth, drawHeight // Destination Width, Height
+        );
         
         ctx.restore();
         // --- DRAWING END ---
@@ -222,31 +253,9 @@ const App = () => {
         updateDisplay();
     }, [settings, currentFilter, updateDisplay]);
     
-    // Effect: Load Sample Image on initial mount
+    // Effect: Load Sample Image on initial mount (TAMAMEN KALDIRILDI)
     useEffect(() => {
-        const loadSampleImage = () => {
-            if (originalImage === null && !isImageLoaded) {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    setOriginalImage(img);
-                    setIsImageLoaded(true);
-                    
-                    // Set initial canvas size
-                    if (canvasRef.current) {
-                        const containerDiv = canvasRef.current.parentNode;
-                        canvasRef.current.width = containerDiv.clientWidth;
-                        canvasRef.current.height = containerDiv.clientHeight;
-                        updateDisplay(); // İlk çizimi tetikle
-                    }
-                };
-                img.onerror = () => {
-                    console.error("Sample image failed to load.");
-                };
-                img.src = SAMPLE_IMAGE_URL;
-            }
-        };
-        loadSampleImage();
+        // Sample görsel yükleme lojiği kaldırıldı. Kullanıcı yükleyince başlar.
     }, [isImageLoaded, originalImage, updateDisplay]);
 
 
@@ -275,7 +284,7 @@ const App = () => {
                     canvasRef.current.width = containerDiv.clientWidth;
                     canvasRef.current.height = containerDiv.clientHeight;
 
-                    setSettings(prev => ({ ...prev, rotation: 0, scale: 1.0, panX: 0, panY: 0 }));
+                    setSettings(prev => ({ ...prev, rotation: 0, scale: 1.0, panX: 0, panY: 0, crop: { x: 0, y: 0, width: 100, height: 100 } }));
                     setCurrentFilter('none');
                     showMessage('Photo uploaded successfully!');
                 };
@@ -308,13 +317,39 @@ const App = () => {
     /** Handle all slider input changes */
     const handleSliderChange = (e) => {
         const { id, value } = e.target;
+        const intValue = parseInt(value, 10);
         
-        // Kaldırılan Zoom özelliğine ait lojik kaldırıldı.
         if (id === 'borderRadius' || id === 'shadow' || id === 'padding' || id === 'blur') {
-             setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
+             setSettings(prev => ({ ...prev, [id]: intValue }));
         } 
         else if (id === 'shadowOffsetX' || id === 'shadowOffsetY') { 
-            setSettings(prev => ({ ...prev, [id]: parseInt(value, 10) }));
+            setSettings(prev => ({ ...prev, [id]: intValue }));
+        }
+        else if (id === 'textOverlaySize' || id === 'textOverlayX' || id === 'textOverlayY' || id === 'textOverlayRotation') { // Rotation eklendi
+            const prop = id.replace('textOverlay', '').toLowerCase();
+            setSettings(prev => ({ ...prev, textOverlay: { ...prev.textOverlay, [prop]: intValue } }));
+        }
+        else if (id === 'scale') { // Zoom geri geldi
+            const scaleMultiplier = parseFloat(value) / 100;
+            setSettings(prev => ({ ...prev, scale: scaleMultiplier }));
+        } 
+        else if (id.startsWith('crop')) {
+            const prop = id.replace('crop', '').toLowerCase(); 
+            // DÜZELTME: Crop W ve H değerlerinin 100'ü geçmesini engelle
+            let finalValue = intValue;
+            
+            setSettings(prev => { 
+                if (prop === 'width' && prev.crop.x + intValue > 100) {
+                    finalValue = 100 - prev.crop.x;
+                } else if (prop === 'height' && prev.crop.y + intValue > 100) {
+                    finalValue = 100 - prev.crop.y;
+                }
+                
+                return { 
+                    ...prev, 
+                    crop: { ...prev.crop, [prop]: finalValue } 
+                };
+            });
         }
         else {
             setSettings(prev => ({ ...prev, [id]: parseFloat(value) }));
@@ -324,14 +359,32 @@ const App = () => {
     /** Handle color input changes */
     const handleColorChange = (e) => {
         const { id, value } = e.target;
-        setSettings(prev => ({ ...prev, [id]: value }));
+        if (id === 'watermarkColor') {
+             setSettings(prev => ({ ...prev, watermarkColor: value }));
+        }
+        else if (id === 'textOverlayColor') {
+             setSettings(prev => ({ ...prev, textOverlay: { ...prev.textOverlay, color: value } }));
+        }
+        else {
+             setSettings(prev => ({ ...prev, [id]: value }));
+        }
+    };
+
+    
+    /** Handle fit mode toggle */
+    const handleFitModeChange = (mode) => {
+        setSettings(prev => ({ ...prev, fitMode: mode }));
     };
 
 
     /** Handle text input changes */
     const handleTextChange = (e) => {
         const { id, value } = e.target;
-        setSettings(prev => ({ ...prev, [id]: value }));
+        if (id === 'textOverlayContent') {
+             setSettings(prev => ({ ...prev, textOverlay: { ...prev.textOverlay, content: value } }));
+        } else {
+             setSettings(prev => ({ ...prev, [id]: value }));
+        }
     };
 
     /** Handle preset background selection */
@@ -382,7 +435,11 @@ const App = () => {
             bgType: 'gradient',
             customBackground: null,
             aspectRatio: 'auto',
-            blur: 0, 
+            blur: 0,
+            crop: { x: 0, y: 0, width: 100, height: 100 },
+            textOverlay: { content: 'Your Caption Here', color: '#ffffff', size: 24, x: 50, y: 50, rotation: 0 },
+            showText: false,
+            fitMode: 'contain',
         });
         setCurrentFilter('none');
         setBgImageObject(null);
@@ -391,180 +448,281 @@ const App = () => {
 
     /** Download final image (High Resolution) */
     const downloadImage = () => {
-        if (!isImageLoaded || isDownloading) {
-            showMessage('Please upload a photo first.');
-            return;
-        }
-        
-        setIsDownloading(true);
-        const finalCanvas = document.createElement('canvas');
-        const finalCtx = finalCanvas.getContext('2d');
-        
-        const originalWidth = originalImage.naturalWidth;
-        const originalHeight = originalImage.naturalHeight;
-        const radians = settings.rotation * Math.PI / 180;
-        
-        // Calculate the bounding box of the rotated image content
-        const cos = Math.abs(Math.cos(radians));
-        const sin = Math.abs(Math.sin(radians));
-        const finalCanvasWidth = Math.ceil((originalWidth * cos) + (originalHeight * sin));
-        const finalCanvasHeight = Math.ceil((originalWidth * sin) + (originalHeight * cos));
-        
-        // --- CALCULATE OUTPUT FRAME SIZE ---
-        const finalPadding = settings.padding * 2; 
-        let outputWidth = finalCanvasWidth + finalPadding;
-        let outputHeight = finalCanvasHeight + finalPadding;
+    if (!isImageLoaded || isDownloading) {
+        showMessage('Please upload a photo first.');
+        return;
+    }
 
-        // Apply Aspect Ratio Constraint to Output
-        if (settings.aspectRatio !== 'auto') {
-            const [wRatio, hRatio] = settings.aspectRatio.split(' / ').map(Number);
-            const ratioValue = wRatio / hRatio;
-            
-            if (outputWidth / outputHeight > ratioValue) {
-                outputHeight = outputWidth / ratioValue;
-            } else {
-                outputWidth = outputHeight * ratioValue;
-            }
-        }
-        
-        finalCanvas.width = outputWidth;
-        finalCanvas.height = outputHeight;
+    setIsDownloading(true);
+    const finalCanvas = document.createElement('canvas');
+    const finalCtx = finalCanvas.getContext('2d');
 
-        // 1. Draw Background
-        finalCtx.save();
-        finalCtx.resetTransform();
+    const originalWidth = originalImage.naturalWidth;
+    const originalHeight = originalImage.naturalHeight;
 
-        // DÜZELTME: Kırmızı gradyan için rengi ayarla
-        let bgColor;
-        if (settings.bgType === 'image' && bgImageObject) {
-            finalCtx.drawImage(bgImageObject, 0, 0, outputWidth, outputHeight);
+    // --- CROP'U GÜVENLİ HALE GETİR ---
+    let cropXPercent = Math.max(0, Math.min(100, settings.crop.x));
+    let cropYPercent = Math.max(0, Math.min(100, settings.crop.y));
+    let cropWPercent = Math.max(1, Math.min(100, settings.crop.width));
+    let cropHPercent = Math.max(1, Math.min(100, settings.crop.height));
+
+    if (cropXPercent + cropWPercent > 100) {
+        cropWPercent = 100 - cropXPercent;
+    }
+    if (cropYPercent + cropHPercent > 100) {
+        cropHPercent = 100 - cropYPercent;
+    }
+
+    const cropW = (cropWPercent / 100) * originalWidth;
+    const cropH = (cropHPercent / 100) * originalHeight;
+    const cropX = (cropXPercent / 100) * originalWidth;
+    const cropY = (cropYPercent / 100) * originalHeight;
+
+    const radians = settings.rotation * Math.PI / 180;
+    const cos = Math.abs(Math.cos(radians));
+    const sin = Math.abs(Math.sin(radians));
+
+    // --- ÖNİZLEME CANVAS BOYUTUNU KULLAN (fitMode ile aynı olacak) ---
+    const previewCanvas = canvasRef.current;
+    let containerWidth = cropW;
+    let containerHeight = cropH;
+
+    if (previewCanvas) {
+        containerWidth = previewCanvas.width;
+        containerHeight = previewCanvas.height;
+    }
+
+    // Önizlemede kullanılan "croppedWidth/Height" zaten cropW/cropH
+    const projectionWidth = (cropW * cos) + (cropH * sin);
+    const projectionHeight = (cropW * sin) + (cropH * cos);
+
+    let fitScaleX = containerWidth / projectionWidth;
+    let fitScaleY = containerHeight / projectionHeight;
+    let fitScale =
+        settings.fitMode === 'contain'
+            ? Math.min(fitScaleX, fitScaleY)
+            : Math.max(fitScaleX, fitScaleY);
+
+    const effectiveScale = fitScale * settings.scale;
+
+    // Bu ölçekte döndürülmüş görüntünün bounding box'ı:
+    const innerWidth = (cropW * effectiveScale * cos) + (cropH * effectiveScale * sin);
+    const innerHeight = (cropW * effectiveScale * sin) + (cropH * effectiveScale * cos);
+
+    // --- ÇIKTI ÇERÇEVESİ ---
+    const finalPadding = settings.padding * 2;
+    let outputWidth = innerWidth + finalPadding;
+    let outputHeight = innerHeight + finalPadding;
+
+    // Aspect ratio zorlaması
+    if (settings.aspectRatio !== 'auto') {
+        const [wRatio, hRatio] = settings.aspectRatio.split(' / ').map(Number);
+        const ratioValue = wRatio / hRatio;
+
+        if (outputWidth / outputHeight > ratioValue) {
+            outputHeight = outputWidth / ratioValue;
         } else {
-            if (settings.background.includes('#f05053')) { // Kırmızı gradyan tespiti
-                bgColor = '#f05053'; 
-            } else if (settings.background.includes('gradient')) {
-                bgColor = '#1e293b'; 
-            } else {
-                bgColor = settings.background.match(/#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/)?.[0] || '#1e293b';
-            }
-            finalCtx.fillStyle = bgColor;
-            finalCtx.fillRect(0, 0, outputWidth, outputHeight); 
+            outputWidth = outputHeight * ratioValue;
         }
-        finalCtx.restore();
+    }
 
-        // Content Center (after padding)
-        const contentCenterX = outputWidth / 2;
-        const contentCenterY = outputHeight / 2;
+    finalCanvas.width = Math.round(outputWidth);
+    finalCanvas.height = Math.round(outputHeight);
 
-        
-        // --- DRAW IMAGE WITH TRANSFORMS ---
-        // Uygulanan filtreleri içeren save bloğu
+    // 1. ARKA PLAN
+    finalCtx.save();
+    finalCtx.resetTransform();
+
+    if (settings.bgType === 'image' && bgImageObject) {
+        finalCtx.drawImage(bgImageObject, 0, 0, finalCanvas.width, finalCanvas.height);
+    } else if (settings.bgType === 'gradient' && settings.background.includes('linear-gradient')) {
+        drawGradient(finalCtx, settings.background, finalCanvas.width, finalCanvas.height);
+    } else {
+        let bgColor;
+        if (settings.background.includes('#f05053')) {
+            bgColor = '#f05053';
+        } else if (settings.background.includes('gradient')) {
+            bgColor = '#1e293b';
+        } else {
+            bgColor =
+                settings.background.match(/#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/)?.[0] ||
+                '#1e293b';
+        }
+        finalCtx.fillStyle = bgColor;
+        finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    }
+    finalCtx.restore();
+
+    // İç alanın merkezi
+    const contentCenterX = finalCanvas.width / 2;
+    const contentCenterY = finalCanvas.height / 2;
+
+    // 2. GÖRÜNTÜYÜ ÇİZ (Önizleme ile aynı filter & scale & radius)
+    finalCtx.save();
+
+    // Aynı filter string (aggressiveBlur yok artık)
+    finalCtx.filter = getCurrentFilterStyle();
+
+    const { panX, panY } = settings;
+
+    finalCtx.translate(contentCenterX, contentCenterY);
+    finalCtx.rotate(radians);
+    finalCtx.scale(effectiveScale, effectiveScale);
+    finalCtx.translate(panX, panY);
+
+    finalCtx.save();
+    // Radius: önizlemedeki gibi effectiveScale'e göre
+    const radius = settings.borderRadius / effectiveScale;
+    roundRect(finalCtx, -cropW / 2, -cropH / 2, cropW, cropH, radius);
+    finalCtx.clip();
+
+    finalCtx.drawImage(
+        originalImage,
+        cropX,
+        cropY,
+        cropW,
+        cropH,
+        -cropW / 2,
+        -cropH / 2,
+        cropW,
+        cropH
+    );
+
+    finalCtx.restore(); // mask
+    finalCtx.restore(); // transform
+
+        // 3. WATERMARK (önizlemedeki pill’e benzer)
+    if (settings.showWatermark && settings.watermarkText) {
         finalCtx.save();
+
+        const text = settings.watermarkText || '';
         
-        // DÜZELTME 1: BLUR filtresini 4 kat artırarak tarayıcı hafifletmesini dengele.
-        const { brightness, contrast, saturate, blur, shadowOffsetX, shadowOffsetY, panX, panY } = settings;
-        const aggressiveBlur = blur * 4; // Blur çarpanı 4 olarak korundu.
-        
-        // DÜZELTME: Filtreleri oluştururken basit filtreyi ekle
-        let finalFilterString = '';
-        if (currentFilter !== 'none') {
-            finalFilterString += `${currentFilter} `; 
-        }
-        finalFilterString += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${aggressiveBlur}px)`;
-        
-        finalCtx.filter = finalFilterString; 
+        // Önizlemede text-xs ≈ 12px, biraz büyük ve ölçeklenebilir olsun:
+        const baseFontSize = 14; // px
+        const scaledFontSize = baseFontSize * (settings.watermarkSize || 1);
+        finalCtx.font = `600 ${scaledFontSize}px Inter, system-ui, sans-serif`;
+        finalCtx.textAlign = 'center';
+        finalCtx.textBaseline = 'middle';
 
-        // DÜZELTME 2: Border Radius'u 4 kat artırarak belirgin yapalım.
-        const baseRadius = settings.borderRadius * 4; 
+        const textMetrics = finalCtx.measureText(text);
+        const textWidth = textMetrics.width;
 
-        finalCtx.translate(contentCenterX, contentCenterY);
-        finalCtx.rotate(radians);
-        
-        // Apply Rounding Mask 
-        finalCtx.save(); // Maske için yeni bir save durumu
-        roundRect(
-            finalCtx, 
-            (-originalWidth / 2), 
-            (-originalHeight / 2), 
-            originalWidth, 
-            originalHeight, 
-            baseRadius 
-        );
-        finalCtx.clip(); // Maskeyi uygula
-        
-        // Draw Image (Görsel çizimi)
-        finalCtx.drawImage(
-            originalImage, 
-            (-originalWidth / 2) + settings.panX, // PanX uygulandı
-            (-originalImage.naturalHeight / 2) + settings.panY, // PanY uygulandı
-            originalWidth, 
-            originalHeight
-        );
+        // Tailwind px-3 py-1.5 ≈ 12px yatay, 6px dikey
+        const paddingX = 12;
+        const paddingY = 6;
 
-        finalCtx.restore(); // Maske save/restore edildi
-        finalCtx.restore(); // Ana transformasyon save/restore edildi
+        const pillWidth = textWidth + paddingX * 2;
+        const pillHeight = scaledFontSize + paddingY * 2;
 
-        // Draw Watermark (Filtresiz ve belirgin olmalı)
-        if (settings.showWatermark && settings.watermarkText) {
-            
-            finalCtx.save(); // Filigran çizimi için yeni save
-            
-            const scaledFontSize = 32 * settings.watermarkSize; // NEW: Font boyutunu ölçeklendir
-            finalCtx.font = `bold ${scaledFontSize}px sans-serif`; 
-            finalCtx.fillStyle = settings.watermarkColor; // NEW: Filigran rengi
-            finalCtx.textAlign = 'right';
-            finalCtx.textBaseline = 'bottom';
-            
-            finalCtx.fillText(
-                settings.watermarkText, 
-                outputWidth - 40, 
-                outputHeight - 40 
-            );
+        // bottom-4 right-4 → yaklaşık 16px
+        const margin = 16;
 
-            finalCtx.restore(); // Filigran çizimi bitti
-        }
+        // İç kutunun (inner container) sağ altından konumla:
+        const pillX = finalCanvas.width - settings.padding - margin - pillWidth;
+        const pillY = finalCanvas.height - settings.padding - margin - pillHeight;
+
+        const pillRadius = pillHeight / 2;
+
+        // Arka plan (bg-black/50)
+        finalCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        roundRect(finalCtx, pillX, pillY, pillWidth, pillHeight, pillRadius);
+        finalCtx.fill();
+
+        // İnce border (border-white/10)
+        finalCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        finalCtx.lineWidth = 1;
+        roundRect(finalCtx, pillX, pillY, pillWidth, pillHeight, pillRadius);
+        finalCtx.stroke();
+
+        // Metin (text-white)
+        const centerX = pillX + pillWidth / 2;
+        const centerY = pillY + pillHeight / 2;
+        finalCtx.fillStyle = settings.watermarkColor || '#ffffff';
+        finalCtx.fillText(text, centerX, centerY);
+
+        finalCtx.restore();
+    }
 
 
-        const dataURL = finalCanvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = dataURL;
-        a.download = 'edited_photo.png';
-        document.body.appendChild(a);
-        a.click(); // İndirme işlemini tetikle
-        
-        // DÜZELTME: İndirme URL'sinin kaldırılması, tarayıcının indirmeyi başlatmasına izin verir.
-        setTimeout(() => {
-            document.body.removeChild(a);
-        }, 100); 
+    // 4. TEXT OVERLAY (inner area'ya göre konumlandır)
+    if (settings.showText && settings.textOverlay.content) {
+        finalCtx.save();
 
-        setIsDownloading(false);
-        showMessage('Download started.');
-    };
+        const textContent = settings.textOverlay.content;
+        const size = settings.textOverlay.size;
+        const color = settings.textOverlay.color;
+
+        // İç alandan padding'i çıkar, yüzdeyi oraya uygula
+        const innerWidthForText =
+            finalCanvas.width - 2 * settings.padding;
+        const innerHeightForText =
+            finalCanvas.height - 2 * settings.padding;
+
+        const xPos =
+            settings.padding + (innerWidthForText * settings.textOverlay.x) / 100;
+        const yPos =
+            settings.padding + (innerHeightForText * settings.textOverlay.y) / 100;
+
+        finalCtx.font = `bold ${size}px Inter, sans-serif`;
+        finalCtx.fillStyle = color;
+        finalCtx.textAlign = 'center';
+        finalCtx.textBaseline = 'middle';
+
+        finalCtx.translate(xPos, yPos);
+        finalCtx.rotate(settings.textOverlay.rotation * Math.PI / 180);
+        finalCtx.fillText(textContent, 0, 0);
+
+        finalCtx.restore();
+    }
+
+    const dataURL = finalCanvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'edited_photo.png';
+    document.body.appendChild(a);
+
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+    }, 100);
+
+    setIsDownloading(false);
+    showMessage('Download started.');
+};
+
 
     // --- Pan/Zoom Event Handlers ---
     
-    // Pan özelliğine ait tüm fonksiyonlar kaldırıldı
     const handleMouseDown = (e) => {};
     const handleMouseMove = (e) => {};
     const handleMouseUp = () => {};
     const handleWheel = (e) => {
         if (!isImageLoaded) return;
         e.preventDefault();
-        // Zoom özelliği kaldırıldığı için, wheel event'i artık sadece kaydırma yapacaktır.
     };
     
     // Responsive update effect
     useEffect(() => {
         const handleResize = () => {
-            if (isImageLoaded && canvasRef.current) {
-                const containerDiv = canvasRef.current.parentNode;
-                canvasRef.current.width = containerDiv.clientWidth;
-                canvasRef.current.height = containerDiv.clientHeight;
-                updateDisplay();
-            }
+            if (!isImageLoaded || !canvasRef.current) return;
+
+            // Canvas'ın bulunduğu container
+            const containerDiv = canvasRef.current.parentElement;
+            const rect = containerDiv.getBoundingClientRect();
+
+            canvasRef.current.width = rect.width;
+            canvasRef.current.height = rect.height;
+
+            updateDisplay();
         };
+
+        // ÖNEMLİ: aspectRatio / padding değiştiği AN hemen çalıştır
+        handleResize();
+
+        // Pencere yeniden boyutlanınca da çalışsın
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [isImageLoaded, updateDisplay]);
+    }, [isImageLoaded, updateDisplay, settings.aspectRatio, settings.padding]);
 
 
     const controlPanelClasses = isImageLoaded ? 'p-4 rounded-xl border border-slate-800 bg-slate-800/70 shadow-lg' : 'p-4 rounded-xl border border-slate-800 bg-slate-800/70 shadow-lg opacity-50 pointer-events-none';
@@ -573,7 +731,6 @@ const App = () => {
         <div className="h-screen w-full bg-slate-950 text-slate-200 font-sans flex flex-col md:flex-row overflow-hidden">
             
             {/* --- CONTROLS / LEFT PANEL --- */}
-            {/* Mobil görünümde aşağıda kalmalı (order-2) */}
             <div className="md:w-72 w-full bg-slate-900 border-r border-slate-800 flex flex-col z-30 shadow-2xl overflow-y-auto custom-scrollbar order-2 md:order-none max-h-[50vh] md:max-h-full">
                 
                 {/* Header */}
@@ -664,6 +821,31 @@ const App = () => {
                                 unit="px" 
                                 onChange={handleSliderChange} 
                             />
+                            
+                            {/* NEW: Fit Mode Toggle */}
+                            <label className="text-xs font-bold text-slate-400 block mb-1">Image Fit Mode</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => handleFitModeChange('contain')}
+                                    className={`py-1.5 text-xs rounded-lg border transition-colors ${
+                                        settings.fitMode === 'contain'
+                                            ? 'bg-cyan-900/50 border-cyan-500 text-cyan-400'
+                                            : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                                    }`}
+                                >
+                                    Contain (Fit)
+                                </button>
+                                <button
+                                    onClick={() => handleFitModeChange('cover')}
+                                    className={`py-1.5 text-xs rounded-lg border transition-colors ${
+                                        settings.fitMode === 'cover'
+                                            ? 'bg-cyan-900/50 border-cyan-500 text-cyan-400'
+                                            : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                                    }`}
+                                >
+                                    Cover (Fill)
+                                </button>
+                            </div>
                         </div>
                     </section>
                     
@@ -715,6 +897,84 @@ const App = () => {
                             )}
                         </div>
                     </section>
+                    
+                    {/* NEW: Text Overlay Controls */}
+                    <section id="textOverlayControls" className={controlPanelClasses}>
+                        <h2 className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider border-b border-slate-700 pb-2">Text Overlay</h2>
+
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-400">Show Text</label>
+                            <input
+                                type="checkbox"
+                                checked={settings.showText}
+                                onChange={(e) => setSettings(prev => ({ ...prev, showText: e.target.checked }))}
+                                className="accent-cyan-500 w-4 h-4"
+                            />
+                        </div>
+
+                        {settings.showText && (
+                            <div className="space-y-3">
+                                <input
+                                    type="text"
+                                    id="textOverlayContent"
+                                    value={settings.textOverlay.content}
+                                    onChange={handleTextChange}
+                                    className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white"
+                                    placeholder="Your caption"
+                                />
+                                <SliderControl 
+                                    id="textOverlaySize" 
+                                    label="Text Size" 
+                                    value={settings.textOverlay.size} 
+                                    min={10} 
+                                    max={80} 
+                                    step={1} 
+                                    unit="px" 
+                                    onChange={handleSliderChange} 
+                                />
+                                <SliderControl 
+                                    id="textOverlayX" 
+                                    label="X Position" 
+                                    value={settings.textOverlay.x} 
+                                    min={0} 
+                                    max={100} 
+                                    step={1} 
+                                    unit="%" 
+                                    onChange={handleSliderChange} 
+                                />
+                                <SliderControl 
+                                    id="textOverlayY" 
+                                    label="Y Position" 
+                                    value={settings.textOverlay.y} 
+                                    min={0} 
+                                    max={100} 
+                                    step={1} 
+                                    unit="%" 
+                                    onChange={handleSliderChange} 
+                                />
+                                <SliderControl 
+                                    id="textOverlayRotation" 
+                                    label="Rotation" 
+                                    value={settings.textOverlay.rotation} 
+                                    min={-45} 
+                                    max={45} 
+                                    step={1} 
+                                    unit="°" 
+                                    onChange={handleSliderChange} 
+                                />
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-slate-400">Color</label>
+                                    <input
+                                        type="color"
+                                        id="textOverlayColor"
+                                        value={settings.textOverlay.color}
+                                        onChange={handleColorChange}
+                                        className="w-6 h-6 rounded-full border border-slate-600 bg-transparent cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </section>
 
 
                     {/* Transformation Controls */}
@@ -732,7 +992,64 @@ const App = () => {
                                 onChange={handleSliderChange} 
                             />
                             
-                            {/* PanX ve PanY kaydırıcıları kaldırıldı */}
+                            {/* NEW: Zoom Slider geri geldi */}
+                            <SliderControl 
+                                id="scale" 
+                                label="Zoom" 
+                                value={settings.scale * 100} 
+                                min={10} 
+                                max={500} 
+                                step={10} 
+                                unit="%" 
+                                onChange={handleSliderChange} 
+                            />
+                        </div>
+                    </section>
+                    
+                    {/* NEW: Crop Controls */}
+                    <section id="cropControls" className={controlPanelClasses}>
+                        <h2 className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider border-b border-slate-700 pb-2">Crop</h2>
+                        <div className="space-y-3">
+                            <SliderControl
+                                id="cropX"
+                                label="Crop X (Origin)"
+                                value={settings.crop.x}
+                                min={0}
+                                max={100}
+                                step={1}
+                                unit="%"
+                                onChange={handleSliderChange}
+                            />
+                             <SliderControl
+                                id="cropY"
+                                label="Crop Y (Origin)"
+                                value={settings.crop.y}
+                                min={0}
+                                max={100}
+                                step={1}
+                                unit="%"
+                                onChange={handleSliderChange}
+                            />
+                            <SliderControl
+                                id="cropWidth"
+                                label="Crop Width"
+                                value={settings.crop.width}
+                                min={10}
+                                max={100}
+                                step={1}
+                                unit="%"
+                                onChange={handleSliderChange}
+                            />
+                            <SliderControl
+                                id="cropHeight"
+                                label="Crop Height"
+                                value={settings.crop.height}
+                                min={10}
+                                max={100}
+                                step={1}
+                                unit="%"
+                                onChange={handleSliderChange}
+                            />
                         </div>
                     </section>
 
@@ -833,18 +1150,17 @@ const App = () => {
             </div>
 
             {/* --- PHOTO PREVIEW / RIGHT AREA --- */}
-            {/* Mobil görünümde yukarıda kalmalı (order-1) ve esnek olmalı */}
             <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] order-1 md:order-none">
                 
                 {/* Preview Container (Relative) */}
                 <div
-                    className={`relative transition-all duration-300 ease-out flex items-center justify-center overflow-hidden w-full h-full max-w-[900px] max-h-[80vh] ${getShadowClass(settings.shadow)}`}
+                    // h-full kaldırıldı ki aspect ratio çalışsın
+                    className={`relative transition-all duration-300 ease-out flex items-center justify-center overflow-hidden w-full max-w-[900px] max-h-[80vh] ${getShadowClass(settings.shadow)}`}
                     style={{
-                         borderRadius: `${settings.borderRadius}px`,
                          padding: `${settings.padding}px`, 
                          ...getBackgroundStyle(), 
                          overflow: 'hidden', 
-                         aspectRatio: settings.aspectRatio, // Applied aspect ratio
+                         aspectRatio: settings.aspectRatio === 'auto' ? 'auto' : settings.aspectRatio,
                     }}
                 >
                     {/* Inner Container (Image/Canvas Wrapper) */}
@@ -852,7 +1168,7 @@ const App = () => {
                         className="relative transition-all duration-300 w-full h-full" 
                         style={{
                             overflow: 'hidden',
-                            borderRadius: `${settings.borderRadius}px`, 
+                            borderRadius: `${settings.borderRadius}px`, // SADECE İÇ KUTU YUVARLAK
                         }}
                     >
                         {/* Canvas: The image itself */}
@@ -879,12 +1195,33 @@ const App = () => {
                             <div 
                                 className="absolute bottom-4 right-4 z-30 pointer-events-none transition-all duration-300"
                                 style={{ 
-                                    borderRadius: `0 0 ${settings.borderRadius}px ${settings.borderRadius}px`,
+                                    borderRadius: `${settings.borderRadius}px`,
                                 }}
                             >
                                 <p className="text-white text-xs font-semibold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm shadow-lg border border-white/10">
                                     {settings.watermarkText}
                                 </p>
+                            </div>
+                        )}
+                        
+                        {/* YENİ: Metin Önizlemesi (Canvas'ın üzerinde) */}
+                        {isImageLoaded && settings.showText && (
+                            <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
+                                <div 
+                                    style={{
+                                        position: 'absolute',
+                                        left: `${settings.textOverlay.x}%`,
+                                        top: `${settings.textOverlay.y}%`,
+                                        fontSize: `${settings.textOverlay.size}px`,
+                                        color: settings.textOverlay.color,
+                                        transform: `translate(-50%, -50%) rotate(${settings.textOverlay.rotation}deg)`,
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: 'bold',
+                                        textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                                    }}
+                                >
+                                    {settings.textOverlay.content}
+                                </div>
                             </div>
                         )}
                     </div>
